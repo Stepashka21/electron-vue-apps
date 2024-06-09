@@ -1,32 +1,31 @@
 <template>
   <div class="bodyList">
+    <div class="overlay" v-if="dialogVisible"></div>
     <div class="content">
+      <div>
+        <img @click="selectFolder" class="imgLogo" :src="require('@/assets/logotip.png')" />
+      </div>
       <button class="showDialog" @click="openDialog">
         Создать проект
       </button>
       <div class="list-group-project">
-        <div v-for="project in projects" :key="project.id">
+        <div v-for="project in projects" :key="project.name">
           <button class="list-item">
             <router-link
-              :to="{ name: 'edit', params: { projectName: project.name } }" 
-              style=" text-decoration: none; color: #ffffff;"
-              >{{ project.name }}</router-link
-            >
+              :to="{ name: 'edit', params: { projectName: project.name } }"
+              style="text-decoration: none; color: #ffffff;"
+            >{{ project.name }}</router-link>
           </button>
         </div>
       </div>
     </div>
-    <button class="goToReplase" @click="goToRe">
-      <span>***</span>
-    </button>
-    <dialog ref="diaOptions" class="dialogNew" style="">
-      <h3 style="color: #ffffff;">Введите название проекта</h3>
+    <dialog ref="diaOptions" class="dialogNew">
+      <h2 style="color: #ffffff;">Введите название проекта</h2>
       <input
         class="inputs"
         type="text"
         v-model="newProjectName"
         placeholder="Название..."
-        
       />
       <div class="btnsDialog">
         <button class="closeDialog" @click="closeDialog()">
@@ -41,6 +40,11 @@
 </template>
 
 <script>
+const { remote } = require('electron');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
 export default {
   name: "ListProject",
 
@@ -48,60 +52,81 @@ export default {
     return {
       projects: [],
       newProjectName: "",
+      // selectedFolderPath: localStorage.getItem('selectedFolderPath') || path.join(os.homedir(), 'Downloads'),
+      selectedFolderPath: this.getDefaultFolderPath(),
+      dialogVisible: false,
     };
   },
+
   mounted() {
-    // Загрузка списка проектов при загрузке компонента
+    this.ensureNeuroEditorFolderExists();
     this.loadProjects();
   },
 
   methods: {
-    goToRe() {
-      this.$router.push({ name: 'ReplaceDialog' });
+    getDefaultFolderPath() {
+      const documentsPath = path.join(os.homedir(), 'Documents');
+      const neuroEditorPath = path.join(documentsPath, 'NeuroEditor');
+      return neuroEditorPath;
     },
-    
+
+    ensureNeuroEditorFolderExists() {
+      const folderPath = this.getDefaultFolderPath();
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
+      }
+    },
     openDialog() {
+      this.dialogVisible = true;
       this.$refs.diaOptions.style.visibility = "visible";
       this.$refs.diaOptions.showModal();
     },
     closeDialog() {
+      this.dialogVisible = false;
       this.$refs.diaOptions.style.visibility = "hidden";
       this.$refs.diaOptions.close();
     },
-
-    async loadProjects() {  
-      const files = require.context("C:/Users/stepa/OneDrive/ALL/Документы/vsCODE/vue-fabtic/public/projects", false, /.json$/);
-      const projects = files.keys().map((filePath) => {
-        const parts = filePath.split("/");
-        const fileName = parts[parts.length - 1];
-
-        return fileName.replace(".json", "");
-      });
-
-      console.log(projects);
-
-      this.projects = projects.map((name) => ({ name }));
+    isProjectFile(filePath) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(content);
+        // Проверяем наличие ключей, которые могут указывать на то, что это проект
+        return data.version || data.objects || data.canvas || data.canvas.version || data.canvas.objects;
+      } catch (error) {
+        return false;
+      }
     },
+    async loadProjects() {
+      if (!this.selectedFolderPath) return;
 
-    // navigateToProject(project) {
-    //   // Получаем имя целевого проекта из параметров маршрута
-    //   const targetProjectName = project.name;
-    //   // Получаем текущий маршрут
-    //   const currentRouteName = this.$route.name;
+      fs.readdir(this.selectedFolderPath, (err, files) => {
+        if (err) {
+          console.error('Ошибка при чтении директории', err);
+          return;
+        }
+        const projects = files
+          .filter(file => file.endsWith('.json'))
+          .map(file => path.join(this.selectedFolderPath, file))
+          .filter(filePath => this.isProjectFile(filePath))
+          .map(filePath => ({ name: path.basename(filePath, '.json') }));
 
-    //   // Проверяем, если текущий маршрут не совпадает с целевым маршрутом
-    //   if (
-    //     currentRouteName !== "edit" ||
-    //     this.$route.params.projectName !== targetProjectName
-    //   ) {
-    //     // Выполняем переход к целевому маршруту
-    //     this.$router.push({
-    //       name: "edit",
-    //       params: { projectName: targetProjectName },
-    //     });
-    //   }
-    // },
-
+        this.projects = projects;
+      });
+    },
+    selectFolder() {
+      const { dialog } = remote;
+      dialog.showOpenDialog({
+        properties: ['openDirectory']
+      }).then(result => {
+        if (!result.canceled) {
+          this.selectedFolderPath = result.filePaths[0];
+          localStorage.setItem('selectedFolderPath', this.selectedFolderPath);
+          this.loadProjects();
+        }
+      }).catch(err => {
+        console.log(err);
+      });
+    },
     createProjectFile() {
       const projectName = this.newProjectName.trim();
       if (!projectName) {
@@ -112,27 +137,28 @@ export default {
       const projectData = { version: "5.3.0", objects: [] };
       const jsonData = JSON.stringify(projectData);
 
-      const blob = new Blob([jsonData], { type: "application/json" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${projectName}.json`;
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (this.selectedFolderPath) {
+        const filePath = path.join(this.selectedFolderPath, `${projectName}.json`);
+        fs.writeFile(filePath, jsonData, (err) => {
+          if (err) {
+            console.error('Ошибка при создании файла', err);
+          } else {
+            console.log('Файл успешно создан');
+            this.loadProjects();
+          }
+        });
+      } else {
+        alert("Пожалуйста, выберите папку для сохранения проекта.");
+      }
     },
-
     createProject() {
-      // Проверка наличия имени нового проекта
       if (this.newProjectName.trim() === "") {
         alert("Введите название проекта");
         return;
       }
 
-      // Создание нового проекта
       this.createProjectFile();
 
-      // Выполнение перехода к редактированию нового проекта
       this.$router.push({
         name: "edit",
         params: { projectName: this.newProjectName },
@@ -142,6 +168,7 @@ export default {
 };
 </script>
 
+
 <style>
 .bodyList {
   display: flex;
@@ -150,6 +177,19 @@ export default {
   width: 95vw;
   height: 90vh;
   background-color: #A7A7A7;
+}
+.selectFolder {
+  height: 8vh;
+  border-radius: 12px;
+  margin: 8px 0;
+  padding: 0 59px;
+  background-color: #006ae3d3;
+  color: #ffffff;
+  border: none;
+}
+.selectFolder:hover {
+  cursor: pointer;  
+  background-color: #005eca;
 }
 
 .content {
@@ -215,6 +255,7 @@ export default {
   width: 400px;
 }
 .inputs {
+  font-size: medium;
   width: 304px;
   height: 40px;
   margin-top: 40px;
@@ -245,6 +286,19 @@ export default {
   border-radius: 12px;
   height: 34px;
   width: 172px;
+}
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8); /* Полупрозрачный черный цвет */
+  z-index: 1000; /* Убедитесь, что оверлей перекрывает всё остальное */
+}
+
+.dialogNew {
+  z-index: 1001; /* Убедитесь, что диалоговое окно находится выше оверлея */
 }
 
 </style>

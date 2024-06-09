@@ -1,81 +1,87 @@
-'use strict'
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
+const { exec } = require('child_process');
 
-import { app, protocol, BrowserWindow } from 'electron'
-import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-const isDevelopment = process.env.NODE_ENV !== 'production'
+let serverProcess;
+let serverPID;
+let mainWindow;
+let loadingWindow;
 
-// Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
-])
+function createMainWindow() {
+    mainWindow = new BrowserWindow({
+        width: 1920,
+        height: 1080,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
 
-async function createWindow() {
-  // Create the browser window.
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      
-      // Use pluginOptions.nodeIntegration, leave this alone
-      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
-    }
-  })
+    mainWindow.loadURL('http://localhost:8080'); // URL вашего Vue приложения
 
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    if (!process.env.IS_TEST) win.webContents.openDevTools()
-  } else {
-    createProtocol('app')
-    // Load the index.html when not in development
-    win.loadURL('app://./index.html')
-  }
+    // Handle window close event to terminate the server process
+    mainWindow.on('closed', function () {
+        if (serverPID) {
+            exec(`taskkill /PID ${serverPID} /F`, (err, stdout, stderr) => {
+                if (err) {
+                    console.error('Error killing server process:', err);
+                } else if (stderr) {
+                    console.error('Error killing server process:', stderr);
+                } else {
+                    console.log('Server process killed successfully.');
+                }
+                app.quit();
+            });
+        } else {
+            app.quit();
+        }
+    });
 }
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+function createLoadingWindow() {
+    loadingWindow = new BrowserWindow({
+        width: 640,
+        height: 1080,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
 
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
-})
+    loadingWindow.loadFile('C:\\Users\\Stoypik\\Desktop\\electron-vue-apps\\generation\\loading.html');
+}
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    try {
-      await installExtension(VUEJS_DEVTOOLS)
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
-  }
-  createWindow()
-})
+app.whenReady().then(() => {
+    createMainWindow();
+    createLoadingWindow();
+    startServer();
+});
 
-// Exit cleanly on request from parent process in development mode.
-if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', (data) => {
-      if (data === 'graceful-exit') {
-        app.quit()
-      }
-    })
-  } else {
-    process.on('SIGTERM', () => {
-      app.quit()
-    })
-  }
+app.on('window-all-closed', function () {
+    if (process.platform !== 'darwin') app.quit();
+});
+
+function startServer() {
+    const command = 'powershell -NoLogo -WindowStyle Hidden -ExecutionPolicy Unrestricted -Command "cd C://stable-diffusion-webui; ./webui.bat --nowebui"';
+    const maxBuffer = 100 * 1024 * 1024;
+
+    serverProcess = exec(command, { detached: true, shell: true, maxBuffer: maxBuffer });
+
+    serverProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        const match = data.toString().match(/Started server process \[(\d+)\]/);
+        if (match && match[1]) {
+            serverPID = parseInt(match[1]);
+            console.log(`Server process PID: ${serverPID}`);
+            loadingWindow.loadFile('C:\\Users\\Stoypik\\Desktop\\electron-vue-apps\\generation\\index.html');
+        }
+    });
+
+    serverProcess.on('error', (err) => {
+        console.error('Server process error:', err);
+    });
+
+    serverProcess.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+    });
 }
