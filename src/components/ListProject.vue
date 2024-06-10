@@ -6,14 +6,14 @@
         <img @click="selectFolder" class="imgLogo" :src="require('@/assets/logotip.png')" />
       </div>
       <button class="showDialog" @click="openDialog">
-        Создать проект
+        <p style="font-size: 24px;">Создать новый проект</p>
       </button>
       <div class="list-group-project">
         <div v-for="project in projects" :key="project.name">
           <button class="list-item">
             <router-link
               :to="{ name: 'edit', params: { projectName: project.name } }"
-              style="text-decoration: none; color: #ffffff;"
+              style="text-decoration: none; color: #ffffff; font-size: 24px;"
             >{{ project.name }}</router-link>
           </button>
         </div>
@@ -174,7 +174,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 95vw;
+  width: 100vw;
   height: 90vh;
   background-color: #A7A7A7;
 }
@@ -231,17 +231,17 @@ export default {
 }
 
 .showDialog {
-  height: 8vh;
-  border-radius: 12px;
+  width: 395px;
+  height: 90px;
+  border-radius: 25px;
   margin: 8px 0;
-  padding: 0 59px;
-  background-color: #006ae3d3;
+  background-color: #747474;
   color: #ffffff;
   border: none;
 }
 .showDialog:hover {
   cursor: pointer;  
-  background-color: #005eca;
+  background-color: #3498db;
 }
 .dialogNew {
   border: none;

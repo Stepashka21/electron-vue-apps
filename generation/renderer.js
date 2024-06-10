@@ -20,14 +20,13 @@ const samplerSelect = document.getElementById('samplerSelect');
 let currentIndex = 0;
 let images = [];
 
-// Function to fetch and populate samplers
 async function fetchSamplers() {
     try {
         const response = await axios.get('http://localhost:7861/sdapi/v1/samplers');
         const samplers = response.data;
         samplers.forEach(sampler => {
             const option = document.createElement('option');
-            option.value = sampler.name; // Assuming each sampler has a 'name' property
+            option.value = sampler.name;
             option.textContent = sampler.name;
             samplerSelect.appendChild(option);
         });
@@ -36,12 +35,9 @@ async function fetchSamplers() {
     }
 }
 
-// Call fetchSamplers on page load
 fetchSamplers();
 
-form.addEventListener('submit', async function (event) {
-    event.preventDefault();
-
+document.getElementById('submit').addEventListener('click', async function () {
     const prompt = promptInput.value;
     const negativePrompt = negativePromptInput.value;
     const steps = stepsInput.value;
@@ -51,6 +47,7 @@ form.addEventListener('submit', async function (event) {
     const width = widthInput.value;
     const height = heightInput.value;
     const samplerName = samplerSelect.value;
+
 
     try {
         const [translatedPrompt, translatedNegativePrompt] = await Promise.all([
@@ -80,6 +77,11 @@ form.addEventListener('submit', async function (event) {
 
         if (images.length > 0) {
             displayImage(currentIndex);
+
+            // Show buttons when an image is generated
+            document.getElementById('editInpaint').classList.remove('hidden');
+            document.getElementById('editImgtoimg').classList.remove('hidden');
+            document.getElementById('editUpscale').classList.remove('hidden');
 
             if (images.length === 1) {
                 document.getElementById('prevBtn').style.display = 'none';
@@ -127,7 +129,7 @@ async function fetchProgressData() {
     } catch (error) {
         console.error('Error fetching data:', error);
     }
-    setTimeout(fetchProgressData, 100);
+    setTimeout(fetchProgressData, 1000);
 }
 
 function updatePage(data) {
@@ -163,5 +165,6 @@ document.getElementById('editUpscale').addEventListener('click', function () {
     const encodedImage = encodeURIComponent(displayedImageSrc);
     window.location.href = `upscale.html?image=${encodedImage}`;
 });
+
 
 

@@ -3,7 +3,7 @@
     <div class="overlay" v-if="dialogVisible"></div>
     <div class="leftPanel">
       <div class="nameProj">
-        <h2 class="headNameProj" @click="toggleContextMenu" >
+        <h2 class="headNameProj" @click="toggleContextMenu">
           {{ projectName }}
         </h2>
         <ul
@@ -102,6 +102,19 @@
               :src="require('/src/assets/img.png')"
             />Подтвердить выбор
           </button>
+          <button class="btnss" @click="openImageDialog">
+            <p style="color: #ffffff; padding: 0; margin: 0">Показать изображение</p>
+          </button>
+        </div>
+        <div>
+          <button class="btnss" @click="clearCanvas">
+            <p style="color: #ffffff; padding: 0; margin: 0">Очистить холст</p>
+          </button>
+        </div>
+        <div>
+          <button class="btnss" @click="deleteEl">
+            <p style="color: #ffffff; padding: 0; margin: 0">Удалить элемент</p>
+          </button>
         </div>
 
         <div v-if="showFigureMenu" class="additionalMenu">
@@ -131,85 +144,114 @@
     </div>
 
     <div class="rightPanel">
-      <button @click="viewDocs()"><p>!Документация</p></button>
       <div class="elementSeting">
         <div v-if="selectedLayer && selectedLayer.object">
           <div class="viewSetings">
-            <p>Выбранный элемент: {{ selectedLayer.name }}</p>
+            <!-- <p>Выбранный элемент: {{ selectedLayer.name }}</p> -->
             <p>Тип объекта: {{ selectedLayer.object.type }}</p>
 
-            <label>Name:</label><br />
-            <input type="text" v-model="layerName" id="name" /><br />
+            <label>Наименование:</label><br />
+            <input
+              type="text"
+              v-model="layerName"
+              id="name"
+              class="inputRigth"
+            />
 
             <!-- Параметры для картинки -->
             <div v-if="selectedLayer.object.type == 'image'">
               <!-- Кнопки фильтров -->
               <div class="imageFilters">
-                <label>Фильтры:</label><br />
+                <label class="lab">Фильтры:</label>
                 <button @click="applyFilter('grayscale')">Черно-белое</button>
                 <button @click="applyFilter('sepia')">Сепия</button>
                 <button @click="applyFilter('brightness')">Яркость</button>
                 <button @click="clearFilters()">Очистить фильтры</button>
               </div>
-            </div>
-
-            <!-- Параметры для объектов с цветом заливки -->
-            <div v-if="selectedLayer.object.type !== 'image'">
-              <label>Width:</label><br />
+              <label class="lab">Прозрачность:</label>
               <input
-                v-model="layerWidth"
-                type="number"
-                @change="updateLayerProperty('width', layerWidth)"
-              /><br />
-              <label>Height:</label><br />
-              <input
-                v-model="layerHeight"
-                type="number"
-                @change="updateLayerProperty('height', layerHeight)"
-              /><br />
-              <label>Color:</label><br />
-              <input type="color" v-model="layerColor" id="color" /><br />
-              <label>Opacity:</label><br />
-              <input
+                class="inputRigth"
                 type="range"
                 v-model="layerOpacity"
                 value="0"
                 max="1"
                 step="0.05"
                 id="opacity"
-              /><br />
+              />
             </div>
 
-            <!-- Параметры для текста -->
-            <div v-if="selectedLayer.object.type === 'textbox'">
-              <label>Width:</label><br />
+            <!-- Параметры для объектов с цветом заливки -->
+            <div
+              style="display: flex; flex-direction: column"
+              v-if="selectedLayer.object.type !== ('image' && 'textbox')"
+            >
+              <label class="lab">Ширина:</label>
               <input
+                class="inputRigth"
                 v-model="layerWidth"
                 type="number"
                 @change="updateLayerProperty('width', layerWidth)"
-              /><br />
-              <label>Height:</label><br />
+              />
+              <label class="lab">Высота:</label>
               <input
+                class="inputRigth"
                 v-model="layerHeight"
                 type="number"
                 @change="updateLayerProperty('height', layerHeight)"
-              /><br />
-              <label for="font-family">Font:</label><br />
+              />
+              <label class="lab">Цвет:</label>
+              <input type="color" v-model="layerColor" id="color" />
+              <label class="lab">Прозрачность:</label>
+              <input
+                class="inputRigth"
+                type="range"
+                v-model="layerOpacity"
+                value="0"
+                max="1"
+                step="0.05"
+                id="opacity"
+              />
+            </div>
+
+            <!-- Параметры для текста -->
+            <div
+              style="display: flex; flex-direction: column"
+              v-if="selectedLayer.object.type === 'textbox'"
+            >
+              <label class="lab">Ширина:</label>
+              <input
+                class="inputRigth"
+                v-model="layerWidth"
+                type="number"
+                @change="updateLayerProperty('width', layerWidth)"
+              />
+              <label class="lab">Высота:</label>
+              <input
+                class="inputRigth"
+                v-model="layerHeight"
+                type="number"
+                @change="updateLayerProperty('height', layerHeight)"
+              />
+              <label class="lab" for="font-family">Стиль шрифта:</label>
               <select
+                class="inputRigth"
                 id="font-family"
                 v-model="selectedFont"
                 @change="applyFont"
               >
                 <option v-for="font in fonts" :value="font" :key="font">
                   {{ font }}
-                </option></select
-              ><br />
-              <label>Font Size:</label><br />
+                </option>
+              </select>
+              <label class="lab">Размер шрифта:</label>
               <input
+                class="inputRigth"
                 v-model="layerFontSize"
                 type="number"
                 @change="updateLayerProperty('fontSize', layerFontSize)"
-              /><br />
+              />
+              <label class="lab">Цвет:</label>
+              <input type="color" v-model="layerColor" id="color" />
               <div class="btnBlock">
                 <button class="btns" @click="toggleBold">
                   <img
@@ -221,8 +263,8 @@
                   <img
                     class="imgBtns"
                     :src="require('/src/assets/podcherk.png')"
-                  /></button
-                ><br />
+                  />
+                </button>
                 <button class="btns" @click="toggleItalic">
                   <img
                     class="imgBtns"
@@ -231,31 +273,43 @@
                 </button>
               </div>
               <div class="textAlignButtons">
-                <label>Горизонтальное выравнивание:</label><br />
-                <div>
+                <label>Горизонтальное выравнивание:</label>
+                <div class="textAlignBtn">
                   <button
                     :class="{ active: selectedTextAlign === 'left' }"
                     @click="setTextAlign('left')"
                   >
-                    Слева
+                    <img
+                      class="btnsImgs"
+                      :src="require('/src/assets/left.png')"
+                    />
                   </button>
                   <button
                     :class="{ active: selectedTextAlign === 'center' }"
                     @click="setTextAlign('center')"
                   >
-                    По центру
+                    <img
+                      class="btnsImgs"
+                      :src="require('/src/assets/center.png')"
+                    />
                   </button>
                   <button
                     :class="{ active: selectedTextAlign === 'right' }"
                     @click="setTextAlign('right')"
                   >
-                    Справа
+                    <img
+                      class="btnsImgs"
+                      :src="require('/src/assets/prav.png')"
+                    />
                   </button>
                   <button
                     :class="{ active: selectedTextAlign === 'justify' }"
                     @click="setTextAlign('justify')"
                   >
-                    По ширине
+                    <img
+                      class="btnsImgs"
+                      :src="require('/src/assets/shirina.png')"
+                    />
                   </button>
                 </div>
               </div>
@@ -271,17 +325,7 @@
       </div>
 
       <button class="btnss" @click="saveCanvasAsImage">
-        <p style="color: #ffffff; padding: 0; margin: 0">
-          Сохранить как картинку
-        </p>
-      </button>
-
-      <button class="btnss" @click="deleteEl">
-        <p style="color: #ffffff; padding: 0; margin: 0">Удалить элемент</p>
-      </button>
-
-      <button class="btnss" @click="clearCanvas">
-        <p style="color: #ffffff; padding: 0; margin: 0">Очистить холст</p>
+        <p style="color: #ffffff; padding: 0; margin: 0">Сохранить img</p>
       </button>
       <button class="btnss" @click="openDialog">
         <p style="color: #ffffff; padding: 0; margin: 0">Диалоговое окно</p>
@@ -306,17 +350,27 @@
       <input
         class="inputs"
         type="text"
-        v-model="newProjectName" 
+        v-model="newProjectName"
         placeholder="Новое название проекта"
       />
       <div class="btnsDialog">
         <button class="closeDialog" @click="closeRenameDialog">
-          <h4 style="margin: 0; padding: 0;">Отмена</h4>
+          <h4 style="margin: 0; padding: 0">Отмена</h4>
         </button>
         <button class="saveProj" @click="renameProject">
-          <h4 style="margin: 0; padding: 0;">Сохранить</h4>
+          <h4 style="margin: 0; padding: 0">Сохранить</h4>
         </button>
       </div>
+    </dialog>
+
+    <dialog ref="imageDialog" class="dialogNew">
+      <h1>Выделенная область</h1>
+      <img
+        :src="selectedImageSrc"
+        alt="Выделенная область"
+        v-if="selectedImageSrc"
+      />
+      <button class="closeDialog" @click="closeImageDialog">Закрыть</button>
     </dialog>
   </div>
 </template>
@@ -403,13 +457,13 @@ export default {
     this.canvas.on("mouse:down", this.onMouseDown);
     this.canvas.on("mouse:move", this.onMouseMove);
     this.canvas.on("mouse:up", this.onMouseUp);
-    console.log(this.getDefaultFolderPath())
+    console.log(this.getDefaultFolderPath());
   },
 
   methods: {
     getDefaultFolderPath() {
-      const documentsPath = path.join(os.homedir(), 'Documents');
-      const neuroEditorPath = path.join(documentsPath, 'NeuroEditor');
+      const documentsPath = path.join(os.homedir(), "Documents");
+      const neuroEditorPath = path.join(documentsPath, "NeuroEditor");
       return neuroEditorPath;
     },
 
@@ -452,14 +506,6 @@ export default {
     //
     //
     //
-    startSelection() {
-      this.isSelecting = true;
-      if (this.selectionRect) {
-        this.canvas.remove(this.selectionRect);
-        this.selectionRect = null;
-      }
-    },
-
     confirmSelection() {
       if (!this.selectionRect) return;
       const dataURL = this.canvas.toDataURL({
@@ -469,26 +515,23 @@ export default {
         height: this.selectionRect.height,
       });
 
-      const image = new Image();
-      image.src = dataURL;
-      image.draggable = true;
-      image.style.position = 'absolute';
-      image.style.left = `${this.selectionRect.left}px`;
-      image.style.top = `${this.selectionRect.top}px`;
-      image.style.width = `${this.selectionRect.width}px`;
-      image.style.height = `${this.selectionRect.height}px`;
+      this.selectedImageSrc = dataURL;
 
-      image.addEventListener('dragstart', this.handleImageDragStart);
+      // Открыть диалоговое окно с изображением
+      this.openImageDialog();
 
-      document.body.appendChild(image);
-      
+      // Удалить выделение с canvas
       this.canvas.remove(this.selectionRect);
       this.selectionRect = null;
       this.canvas.renderAll();
     },
 
-    handleImageDragStart(event) {
-      event.dataTransfer.setData('text/plain', event.target.src);
+    openImageDialog() {
+      this.$refs.imageDialog.showModal();
+    },
+
+    closeImageDialog() {
+      this.$refs.imageDialog.close();
     },
 
     onMouseDown(options) {
@@ -501,8 +544,8 @@ export default {
         top: this.startY,
         width: 0,
         height: 0,
-        fill: 'rgba(255, 255, 255, 0.0001)',
-        stroke: 'black',
+        fill: "rgba(255, 255, 255, 0.0001)",
+        stroke: "black",
         strokeWidth: 1,
         selectable: false,
         evented: false,
@@ -527,6 +570,14 @@ export default {
 
     onMouseUp() {
       this.isSelecting = false;
+    },
+
+    startSelection() {
+      this.isSelecting = true;
+      if (this.selectionRect) {
+        this.canvas.remove(this.selectionRect);
+        this.selectionRect = null;
+      }
     },
 
     handleDragOver(event) {
@@ -581,7 +632,7 @@ export default {
       if (this.newProjectName) {
         this.projectName = this.newProjectName;
       }
-      const selectedFolderPath = this.getDefaultFolderPath()
+      const selectedFolderPath = this.getDefaultFolderPath();
       this.projectFilePath = path.join(
         selectedFolderPath,
         `${this.projectName}.json`
@@ -636,7 +687,7 @@ export default {
       this.newProjectName = this.projectName; // заполняем поле текущим именем проекта
       this.$refs.renameDialog.style.visibility = "visible";
       this.$refs.renameDialog.showModal();
-      this.showContextMenu = false
+      this.showContextMenu = false;
     },
 
     closeRenameDialog() {
@@ -646,9 +697,15 @@ export default {
     },
 
     renameProject() {
-      const selectedFolderPath = this.getDefaultFolderPath()
-      const oldFilePath = path.join(selectedFolderPath, `${this.projectName}.json`);
-      const newFilePath = path.join(selectedFolderPath, `${this.newProjectName}.json`);
+      const selectedFolderPath = this.getDefaultFolderPath();
+      const oldFilePath = path.join(
+        selectedFolderPath,
+        `${this.projectName}.json`
+      );
+      const newFilePath = path.join(
+        selectedFolderPath,
+        `${this.newProjectName}.json`
+      );
 
       fs.rename(oldFilePath, newFilePath, (err) => {
         if (err) {
@@ -842,8 +899,8 @@ export default {
     //
     //
     saveProject() {
-      if(this.newProjectName) {
-        this.projectName = this.newProjectName
+      if (this.newProjectName) {
+        this.projectName = this.newProjectName;
       }
       const canvasData = this.canvas.toJSON();
       const layersData = this.layers.map((layer) => ({
@@ -855,9 +912,12 @@ export default {
         layers: layersData,
       };
       const jsonData = JSON.stringify(projectData);
-      
-      const selectedFolderPath = this.getDefaultFolderPath()
-      const filePath = path.join(selectedFolderPath, `${this.projectName}.json`);
+
+      const selectedFolderPath = this.getDefaultFolderPath();
+      const filePath = path.join(
+        selectedFolderPath,
+        `${this.projectName}.json`
+      );
 
       fs.writeFile(filePath, jsonData, (err) => {
         if (err) {
@@ -865,8 +925,8 @@ export default {
           return;
         }
         console.log("Проект успешно сохранен");
-      })
-      this.showContextMenu = false
+      });
+      this.showContextMenu = false;
     },
     saveCanvasAsImage() {
       const dataURL = this.canvas.toDataURL();
@@ -999,24 +1059,6 @@ export default {
     negativeRequestWindow() {
       // Логика для негативного запроса
     },
-    handleReceiveData(data) {
-      // Получаем данные обратно и обновляем холст
-      const { canvasData, selection } = JSON.parse(data);
-
-      // Сохраняем положение области
-      this.selectionPosition = selection;
-
-      // Загружаем данные холста
-      this.canvas.loadFromJSON(canvasData, () => {
-        // Выделяем область на холсте
-        this.selectionRect.set(selection);
-        this.canvas.renderAll();
-      });
-
-      // Скрываем диалог
-      this.showDialog = false;
-    },
-
     handleSelection(e) {
       const activeObject = e.target;
       const selectedLayer = this.layers.find(
@@ -1095,7 +1137,7 @@ export default {
         const newName = this.newProjectName.trim();
         this.projectName = newName;
 
-        const selectedFolderPath = localStorage.getItem("selectedFolderPath") || path.join(os.homedir(), "Downloads");
+        const selectedFolderPath = this.getDefaultFolderPath();
         const oldFilePath = path.join(selectedFolderPath, `${oldName}.json`);
         const newFilePath = path.join(selectedFolderPath, `${newName}.json`);
 
@@ -1229,7 +1271,9 @@ canvas {
 .btnBlock {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 12px;
 }
 .btns {
   background-color: #2c2c2c;
@@ -1240,22 +1284,38 @@ canvas {
 .imgBtns {
   width: 28px;
 }
+.textAlignButtons {
+  display: flex;
+  flex-direction: column;
+}
 .textAlignButtons div {
   display: flex;
-  gap: 10px;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .textAlignButtons button {
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  background-color: #f5f5f5;
+  display: flex;
+  width: 35px;
+  border: none;
+  border-inline: none;
+  border-radius: 7px;
+  background-color: #2c2c2c;
   cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
 }
 
 .textAlignButtons button.active {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
+  background-color: #7c7c7c;
+  border: none;
+  border-inline: none;
+  border-radius: 7px;
+}
+.btnsImgs {
+  width: 20px;
 }
 
 .btnss {
@@ -1377,8 +1437,23 @@ textarea:active {
   width: 20px;
 }
 
+.inputRigth {
+  width: 90%;
+  border: none;
+  border-inline: none;
+  border-radius: 7px;
+  font-size: 16px;
+}
+.inputRigth:active {
+  border: none;
+  border-inline: none;
+  border-radius: 7px;
+}
+.lab {
+  margin-top: 10px;
+}
 .rightPanel {
-  width: auto;
+  width: 12vw;
   height: auto;
 }
 .elementSeting {
@@ -1455,7 +1530,7 @@ textarea:active {
   justify-content: space-between;
 }
 .closeDialog {
-  background-color: #F04444;
+  background-color: #f04444;
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -1463,7 +1538,7 @@ textarea:active {
   width: 172px;
 }
 .saveProj {
-  background-color: #39B400;
+  background-color: #39b400;
   color: #ffffff;
   border: none;
   border-radius: 12px;
