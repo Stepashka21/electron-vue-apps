@@ -11,15 +11,17 @@ export default {
 </script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+* {
+  font-family: "Inter", sans-serif;
+  font-weight: 300;
+}
 body {
   background-color: #A7A7A7;
   align-items: center;
   width: 99vw;   
 }
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   background-color: #A7A7A7;
   margin: -9px;
   

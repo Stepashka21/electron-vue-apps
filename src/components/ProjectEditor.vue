@@ -137,7 +137,7 @@
             <!-- <p>Выбранный элемент: {{ selectedLayer.name }}</p> -->
             <p>Тип объекта: {{ selectedLayer.object.type }}</p>
 
-            <label>Наименование:</label><br />
+            <label class="lab">Наименование:</label>
             <input
               type="text"
               v-model="layerName"
@@ -146,16 +146,19 @@
             />
 
             <!-- Параметры для картинки -->
-            <div v-if="selectedLayer.object.type == 'image'">
+            <div style="display: flex; flex-direction: column; align-items: center" 
+              v-if="selectedLayer.object.type == 'image'">
               <!-- Кнопки фильтров -->
-              <div class="imageFilters">
-                <label class="lab">Фильтры:</label>
-                <button @click="applyFilter('grayscale')">Черно-белое</button>
-                <button @click="applyFilter('sepia')">Сепия</button>
-                <button @click="applyFilter('brightness')">Яркость</button>
-                <button @click="clearFilters()">Очистить фильтры</button>
+              <div style="margin-top: 10px; display: flex; flex-direction: column; align-items: center">
+                <label style="margin-bottom: 0" >Фильтры:</label>
+                <div style="display: flex; flex-direction: column;">
+                  <button class="filterBtn" @click="applyFilter('grayscale')">Черно-белое</button>
+                  <button class="filterBtn" @click="applyFilter('sepia')">Сепия</button>
+                  <button class="filterBtn" @click="applyFilter('brightness')">Яркость</button>
+                  <button class="filterBtns" @click="clearFilters()">Очистить фильтры</button>
+                </div>  
               </div>
-              <label class="lab">Прозрачность:</label>
+              <!-- <label class="lab">Прозрачность:</label>
               <input
                 class="inputRigth"
                 type="range"
@@ -164,12 +167,12 @@
                 max="1"
                 step="0.05"
                 id="opacity"
-              />
+              /> -->
             </div>
 
             <!-- Параметры для объектов с цветом заливки -->
             <div
-              style="display: flex; flex-direction: column"
+              style="display: flex; flex-direction: column; align-items: center"
               v-if="selectedLayer.object.type !== ('image' && 'textbox')"
             >
               <label class="lab">Ширина:</label>
@@ -202,7 +205,7 @@
 
             <!-- Параметры для текста -->
             <div
-              style="display: flex; flex-direction: column"
+              style="display: flex; flex-direction: column; align-items: center"
               v-if="selectedLayer.object.type === 'textbox'"
             >
               <label class="lab">Ширина:</label>
@@ -239,6 +242,16 @@
               />
               <label class="lab">Цвет:</label>
               <input type="color" v-model="layerColor" id="color" />
+              <label class="lab" >Прозрачность:</label>
+              <input
+                class="inputRigth"
+                type="range"
+                v-model="layerOpacity"
+                value="0"
+                max="1"
+                step="0.05"
+                id="opacity"
+              />
               <div class="btnBlock">
                 <button class="btns" @click="toggleBold">
                   <img
@@ -260,7 +273,10 @@
                 </button>
               </div>
               <div class="textAlignButtons">
-                <label>Горизонтальное выравнивание:</label>
+               
+                  <label>Горизонтальное</label>
+                  <label style="margin-bottom: 10px">выравнивание:</label>
+
                 <div class="textAlignBtn">
                   <button
                     :class="{ active: selectedTextAlign === 'left' }"
@@ -1133,6 +1149,7 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 @import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Pacifico&family=VT323&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap");
@@ -1144,6 +1161,10 @@ export default {
 @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
 
+* {
+  font-family: "Inter", sans-serif;
+  font-weight: 300;
+}
 .alls {
   display: flex;
   background-color: #a7a7a7;
@@ -1165,6 +1186,7 @@ export default {
   align-items: center;
 }
 .headNameProj {
+  font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1230,7 +1252,7 @@ canvas {
 .btnBlock {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-evenly;
   width: 100%;
   margin-top: 12px;
 }
@@ -1244,26 +1266,33 @@ canvas {
   width: 28px;
 }
 .textAlignButtons {
+  margin: 10px 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+.gorizont {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .textAlignButtons div {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-evenly;  
   width: 100%;
 }
 
 .textAlignButtons button {
   display: flex;
+  justify-content: center;
+  align-items: center;
   width: 35px;
   border: none;
   border-inline: none;
   border-radius: 7px;
   background-color: #2c2c2c;
   cursor: pointer;
-  justify-content: center;
-  align-items: center;
   padding: 5px;
 }
 
@@ -1410,21 +1439,47 @@ textarea:active {
   border-radius: 7px;
 }
 .lab {
-  margin-top: 10px;
+  margin-top: 12px;
+  margin-bottom: 5px;
+}
+.filterBtn {
+  margin-top: 5px; 
+  border: none;  
+  border-inline: none;  
+  border-radius: 7px;
+  background-color: #ffffff;
+}
+.filterBtn:hover {
+  background-color: #d3d3d3;
+}
+.filterBtns {
+  margin-top: 5px; 
+  border: none;  
+  border-inline: none;  
+  border-radius: 7px;
+  background-color: #a7a7a7;
+}
+.filterBtns:hover {
+  background-color: #000000;
+  color: #ffffff;
 }
 .rightPanel {
-  width: 12vw;
+  /* width: 12vw; */
   height: auto;
 }
 .elementSeting {
   margin-top: 5px;
 }
 .viewSetings {
+  display: flex;
   color: #ffffff;
+  width: fit-content;
   margin: 9px;
   padding: 5px;
   background-color: #2c2c2c;
   border-radius: 12px;
+  flex-direction: column;
+  align-items: center;
 }
 .generateee {
   font-family: "Times New Roman", Times, serif;
