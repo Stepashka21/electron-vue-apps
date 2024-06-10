@@ -40,8 +40,10 @@ function createMainWindow() {
 
 function createLoadingWindow() {
     loadingWindow = new BrowserWindow({
-        width: 640,
-        height: 1080,
+        width: 1780,
+		height: 800,
+		resizable: false,   
+		maximizable: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false

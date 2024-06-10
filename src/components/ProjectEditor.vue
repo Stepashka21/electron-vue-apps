@@ -3,7 +3,7 @@
     <div class="overlay" v-if="dialogVisible"></div>
     <div class="leftPanel">
       <div class="nameProj">
-        <h2 class="headNameProj" @click="toggleContextMenu">
+        <h2 class="headNameProj" @click="toggleContextMenu" ref="headNameProj">
           {{ projectName }}
         </h2>
         <ul
@@ -12,11 +12,12 @@
             top: `${contextMenuPosition.top}px`,
             left: `${contextMenuPosition.left}px`,
           }"
-          class="context-menu"
-        >
+          class="context-menu">
+
           <li @click="showRenameDialog">Переименовать проект</li>
           <li @click="goBack">Вернуться</li>
           <li @click="saveProject">Сохранить проект</li>
+          <li @click="saveCanvasAsImage">Сохранить как картинку</li>
         </ul>
       </div>
       <!-- <router-link :to="{ name: 'ReplaceDialog' }">Перейти на страницу Replace</router-link> -->
@@ -51,70 +52,56 @@
     <div class="canvasPanel">
       <div class="buttunsGrid">
         <div class="listBtn">
-          <button class="btnss" @click="viewFigure">
+          <button class="btnss" @click="deselectAll" title="Сброс выделения">
             <img class="imgIcons" :src="require('/src/assets/kursor.png')" />
           </button>
         </div>
 
         <div class="listBtn">
-          <button class="btnss" @click="viewFigure">
-            <img class="imgIcons" :src="require('/src/assets/layers.png')" />
-          </button>
-        </div>
-
-        <div class="listBtn">
-          <button class="btnss" @click="addText">
+          <button class="btnss" @click="addText" title="Создать текст">
             <img class="imgIcons" :src="require('/src/assets/text.png')" />
             <!--Text-->
           </button>
         </div>
 
         <div class="listBtn">
-          <button class="btnss" @click="viewFigure">
+          <button class="btnss" @click="viewFigure" title="Добавить фигуру">
             <img class="imgIcons" :src="require('/src/assets/geometry.png')" />
           </button>
         </div>
 
-        <div class="listBtn">
+        <!-- <div class="listBtn">
           <button class="btnss" @click="viewFigure">
             <img class="imgIcons" :src="require('/src/assets/pen.png')" />
           </button>
-        </div>
+        </div> -->
 
         <div class="listBtn">
-          <button class="btnss" @click="addImg">
+          <button class="btnss" @click="addImg" title="Добавить изображение">
             <img class="imgIcons" :src="require('/src/assets/img.png')" />
           </button>
         </div>
 
         <div class="listBtn">
-          <button class="btnss" @click="startSelection">
-            <img
-              class="imgIcons"
-              :src="require('/src/assets/img.png')"
-            />Выбрать область
+          <button class="btnss" @click="startSelection" style="color: #ffffff" title="Выделить область">
+            <img class="imgIcons" :src="require('/src/assets/selectLay.png')" />
           </button>
         </div>
         <div class="listBtn">
-          <button class="btnss" @click="confirmSelection">
-            <img
-              class="imgIcons"
-              :src="require('/src/assets/img.png')"
-            />Подтвердить выбор
+          <button class="btnss" @click="confirmSelection" style="color: #ffffff" title="Передать область">
+            <img class="imgIcons" :src="require('/src/assets/saveLay.png')"/>
           </button>
-          <button class="btnss" @click="openImageDialog">
-            <p style="color: #ffffff; padding: 0; margin: 0">Показать изображение</p>
+        </div>
+        
+        <div>
+          <button class="btnss" @click="deleteEl" title="Удалить элемент">
+            <img class="imgIcons" :src="require('/src/assets/deleteEl.png')"/>
           </button>
         </div>
         <div>
-          <button class="btnss" @click="clearCanvas">
-            <p style="color: #ffffff; padding: 0; margin: 0">Очистить холст</p>
-          </button>
-        </div>
-        <div>
-          <button class="btnss" @click="deleteEl">
-            <p style="color: #ffffff; padding: 0; margin: 0">Удалить элемент</p>
-          </button>
+          <button class="btnss" @click="clearCanvas" title="Очистить канвас">
+            <img class="imgIcons" :src="require('/src/assets/clearCanvas.png')"/>           
+        </button>
         </div>
 
         <div v-if="showFigureMenu" class="additionalMenu">
@@ -135,7 +122,7 @@
         <canvas
           ref="canvas"
           width="1280"
-          height="720"
+          height="835"
           @click="deselectAll"
           @dragover.prevent="handleDragOver"
           @drop="handleDrop"
@@ -317,19 +304,16 @@
 
             <button class="btnsss" @click="saveSettings">
               <p style="color: #ffffff; padding: 0; margin: 0">
-                Сохранить настройки
+                Сохранить
               </p>
             </button>
           </div>
         </div>
       </div>
 
-      <button class="btnss" @click="saveCanvasAsImage">
-        <p style="color: #ffffff; padding: 0; margin: 0">Сохранить img</p>
-      </button>
-      <button class="btnss" @click="openDialog">
-        <p style="color: #ffffff; padding: 0; margin: 0">Диалоговое окно</p>
-      </button>
+      <!-- <button class="btnss" @click="openDialog">
+        <p style="color: #ffffff; padding: 0; margin: 0">! Документация</p>
+      </button> -->
     </div>
 
     <dialog ref="diaOptions" class="dialogNew">
@@ -369,6 +353,7 @@
         :src="selectedImageSrc"
         alt="Выделенная область"
         v-if="selectedImageSrc"
+        style="border: 1px solid black;"
       />
       <button class="closeDialog" @click="closeImageDialog">Закрыть</button>
     </dialog>
@@ -408,7 +393,6 @@ export default {
       showFigureMenu: false,
       jsonData: null,
       selectionPosition: null,
-      selectionRect: null, // передаваемая область
       selectedFolderPath: this.getDefaultFolderPath(),
       fonts: [
         "Times New Roman",
@@ -437,6 +421,8 @@ export default {
       isSelecting: false,
       startX: 0,
       startY: 0,
+      selectedImageSrc: null,
+      selectionRect: null, // передаваемая область
     };
   },
 
@@ -444,6 +430,7 @@ export default {
     // Переместили глобальную обработку событий на методы компонента
     document.addEventListener("dragover", this.handleDragOver, false);
     document.addEventListener("drop", this.handleDrop, false);
+    document.addEventListener('click', this.handleClickOutside);
 
     this.canvas = new fabric.Canvas(this.$refs.canvas, {
       isDrawingMode: false,
@@ -460,41 +447,15 @@ export default {
     console.log(this.getDefaultFolderPath());
   },
 
+  beforeDestroy() {
+    document.removeEventListener('click', this.handleClickOutside);
+  },
+
   methods: {
     getDefaultFolderPath() {
       const documentsPath = path.join(os.homedir(), "Documents");
       const neuroEditorPath = path.join(documentsPath, "NeuroEditor");
       return neuroEditorPath;
-    },
-
-    handleDragOver(event) {
-      event.preventDefault();
-      console.log("Drag over event triggered");
-    },
-    handleDrop(event) {
-      event.preventDefault();
-      console.log("Drop event triggered");
-      event.preventDefault();
-      const files = event.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        if (file.type.startsWith("image/")) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            fabric.Image.fromURL(e.target.result, (img) => {
-              const canvasCenter = this.canvas.getCenter();
-              img.set({
-                left: canvasCenter.left - img.width / 2,
-                top: canvasCenter.top - img.height / 2,
-              });
-              this.canvas.add(img);
-              this.addLayer(img);
-              this.canvas.renderAll();
-            });
-          };
-          reader.readAsDataURL(file);
-        }
-      }
     },
 
     //
@@ -506,34 +467,6 @@ export default {
     //
     //
     //
-    confirmSelection() {
-      if (!this.selectionRect) return;
-      const dataURL = this.canvas.toDataURL({
-        left: this.selectionRect.left,
-        top: this.selectionRect.top,
-        width: this.selectionRect.width,
-        height: this.selectionRect.height,
-      });
-
-      this.selectedImageSrc = dataURL;
-
-      // Открыть диалоговое окно с изображением
-      this.openImageDialog();
-
-      // Удалить выделение с canvas
-      this.canvas.remove(this.selectionRect);
-      this.selectionRect = null;
-      this.canvas.renderAll();
-    },
-
-    openImageDialog() {
-      this.$refs.imageDialog.showModal();
-    },
-
-    closeImageDialog() {
-      this.$refs.imageDialog.close();
-    },
-
     onMouseDown(options) {
       if (!this.isSelecting) return;
       const pointer = this.canvas.getPointer(options.e);
@@ -544,7 +477,7 @@ export default {
         top: this.startY,
         width: 0,
         height: 0,
-        fill: "rgba(255, 255, 255, 0.0001)",
+        fill: "rgba(0, 0, 0, 0.5)", // Полупрозрачный фон для затемнения
         stroke: "black",
         strokeWidth: 1,
         selectable: false,
@@ -556,20 +489,70 @@ export default {
     onMouseMove(options) {
       if (!this.isSelecting || !this.selectionRect) return;
       const pointer = this.canvas.getPointer(options.e);
-      const width = Math.abs(pointer.x - this.startX);
-      const height = Math.abs(pointer.y - this.startY);
-      const size = Math.max(Math.min(width, height, 1024), 240); // Обеспечить квадрат и ограничить размер
+      const width = pointer.x - this.startX;
+      const height = pointer.y - this.startY;
       this.selectionRect.set({
-        width: size,
-        height: size,
-        left: pointer.x < this.startX ? this.startX - size : this.startX,
-        top: pointer.y < this.startY ? this.startY - size : this.startY,
+        width: Math.abs(width),
+        height: Math.abs(height),
       });
+      if (width < 0) {
+        this.selectionRect.set({ left: pointer.x });
+      }
+      if (height < 0) {
+        this.selectionRect.set({ top: pointer.y });
+      }
       this.canvas.renderAll();
     },
 
     onMouseUp() {
+      if (!this.isSelecting || !this.selectionRect) return;
       this.isSelecting = false;
+    },
+
+    confirmSelection() {
+      if (!this.selectionRect) {
+        console.log("Область не выбрана");
+        return;
+      }
+
+      // Сохраните координаты и размеры выделенной области
+      const { left, top, width, height } = this.selectionRect;
+
+      // Удалите выделение с затемнением
+      this.canvas.remove(this.selectionRect);
+
+      // Создайте новый прямоугольник без затемнения для получения данных
+      const cleanRect = new fabric.Rect({
+        left: this.startX,
+        top: this.startY,
+        width,
+        height,
+        fill: "transparent",
+        stroke: "transparent",
+        selectable: false,
+        evented: false,
+      });
+      this.canvas.add(cleanRect);
+      this.canvas.renderAll();
+
+      // Получите данные изображения из выделенной области
+      const dataURL = this.canvas.toDataURL({
+        left: cleanRect.left,
+        top: cleanRect.top,
+        width: cleanRect.width,
+        height: cleanRect.height,
+      });
+
+      // Удалите чистый прямоугольник
+      this.canvas.remove(cleanRect);
+      this.canvas.renderAll();
+
+      // Установите полученные данные как источник изображения
+      this.selectedImageSrc = dataURL;
+      console.log("Selected image src:", this.selectedImageSrc);
+
+      // Откройте диалоговое окно с изображением
+      this.openImageDialog();
     },
 
     startSelection() {
@@ -578,6 +561,26 @@ export default {
         this.canvas.remove(this.selectionRect);
         this.selectionRect = null;
       }
+    },
+
+    openImageDialog() {
+      if (this.selectedImageSrc){     
+        this.$refs.imageDialog.style.visibility = "visible";
+        const img = new Image();
+        img.onload = () => {
+          const width = img.width;
+          const height = img.height;
+          this.$refs.imageDialog.style.width = `${width + 100}px`;
+          this.$refs.imageDialog.style.height = `${height + 150}px`;
+          this.$refs.imageDialog.showModal();
+        };
+        img.src = this.selectedImageSrc;
+      }
+    },
+
+    closeImageDialog() {
+      this.$refs.imageDialog.style.visibility = "hidden";
+      this.$refs.imageDialog.close();
     },
 
     handleDragOver(event) {
@@ -662,15 +665,15 @@ export default {
       if (!this.projectData) return;
       this.canvas.loadFromJSON(this.projectData.canvas, () => {
         this.canvas.renderAll();
-      });
-      setTimeout(() => {
+
+        // После того как холст полностью загружен, обновляем слои
         if (this.projectData.layers && Array.isArray(this.projectData.layers)) {
           this.projectData.layers.forEach((layerData) => {
             const object = this.canvas.item(layerData.index);
             if (object) this.addLayer(object);
           });
         }
-      }, 0);
+      });
     },
 
     //
@@ -722,11 +725,7 @@ export default {
       });
     },
 
-    //
-    //
     // ОТОБРАЖЕНИЕ МЕНЮ С ФИГУРАМИ
-    //
-    //
     viewFigure() {
       this.showFigureMenu = !this.showFigureMenu;
     },
@@ -749,11 +748,6 @@ export default {
       this.dialogVisible = false;
       this.$refs.diaDocs.style.visibility = "hidden";
       this.$refs.diaDocs.close();
-    },
-    openDialog() {
-      this.dialogVisible = true;
-      this.$refs.diaOptions.style.visibility = "visible";
-      this.$refs.diaOptions.showModal();
     },
     closeDialog() {
       this.dialogVisible = false;
@@ -781,9 +775,7 @@ export default {
         name: "Rectangle",
         width: 100,
         height: 100,
-        fill: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(
-          Math.random() * 256
-        )}, ${Math.floor(Math.random() * 256)})`,
+        fill: `#000000`,
         left: 10,
         top: 10,
         selectable: true,
@@ -797,9 +789,7 @@ export default {
         id: this.generateId(),
         name: "Circle",
         radius: 50,
-        fill: `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(
-          Math.random() * 256
-        )}, ${Math.floor(Math.random() * 256)})`,
+        fill: `#000000`,
         left: 50,
         top: 50,
         selectable: true,
@@ -830,7 +820,6 @@ export default {
         reader.readAsDataURL(file);
       };
       input.click();
-      this.viewFigure();
     },
     addText() {
       const text = new fabric.Textbox("", {
@@ -838,7 +827,7 @@ export default {
         top: 50,
         width: 150,
         height: 100,
-        fill: "red",
+        fill: "#000000",
         fontSize: 20,
         fontFamily: this.selectedFont,
         underline: false,
@@ -849,9 +838,6 @@ export default {
       });
       this.canvas.add(text);
       this.addLayer(text);
-    },
-    generateId() {
-      return Math.random().toString(36).substr(2, 9);
     },
     addListeners(layer) {
       layer.object.onSelect = () => {
@@ -1053,12 +1039,6 @@ export default {
         this.canvas.renderAll();
       }
     },
-    requestWindow() {
-      // Логика для окна запроса
-    },
-    negativeRequestWindow() {
-      // Логика для негативного запроса
-    },
     handleSelection(e) {
       const activeObject = e.target;
       const selectedLayer = this.layers.find(
@@ -1103,7 +1083,7 @@ export default {
         });
         if (object.type === "textbox") {
           object.set({
-            fontFamily: this.layerFont,
+            fontFamily: this.selectedFont,
             fontSize: parseFloat(this.layerFontSize),
           });
         }
@@ -1114,6 +1094,7 @@ export default {
     changeTextAlignment(alignment) {
       this.selectedTextAlign = alignment;
     },
+
     toggleContextMenu(event) {
       this.showContextMenu = !this.showContextMenu;
       if (this.showContextMenu) {
@@ -1123,40 +1104,18 @@ export default {
         };
       }
     },
-    handleDocumentClick(event) {
+    handleClickOutside(event) {
+      const contextMenu = this.$refs.contextMenu;
+      const headNameProj = this.$refs.headNameProj;
+
       if (
-        !this.$refs.contextMenu ||
-        !this.$refs.contextMenu.contains(event.target)
+        contextMenu &&
+        !contextMenu.contains(event.target) &&
+        headNameProj &&
+        !headNameProj.contains(event.target)
       ) {
         this.showContextMenu = false;
       }
-    },
-    renameProject() {
-      if (this.newProjectName) {
-        const oldName = this.projectName;
-        const newName = this.newProjectName.trim();
-        this.projectName = newName;
-
-        const selectedFolderPath = this.getDefaultFolderPath();
-        const oldFilePath = path.join(selectedFolderPath, `${oldName}.json`);
-        const newFilePath = path.join(selectedFolderPath, `${newName}.json`);
-
-        fs.rename(oldFilePath, newFilePath, (err) => {
-          if (err) {
-            console.error("Ошибка при переименовании файла", err);
-            // Вернуть старое имя проекта в случае ошибки
-            this.projectName = oldName;
-            return;
-          }
-          console.log("Файл успешно переименован");
-          this.saveProject();
-          // Обновить список проектов после переименования
-          this.loadProject();
-        });
-
-        this.closeRenameDialog();
-      }
-      this.showContextMenu = false;
     },
 
     goBack() {
@@ -1190,7 +1149,7 @@ export default {
   background-color: #a7a7a7;
 }
 .leftPanel {
-  margin: 8px 25px 8px 8px;
+  margin: 8px 8px 8px 8px;
   height: 96vh;
   width: 12vw;
 }
@@ -1251,7 +1210,7 @@ export default {
 }
 .canav {
   width: 1280px;
-  height: 720px;
+  height: 835;
   background-color: #ffffff;
 }
 canvas {
@@ -1320,6 +1279,7 @@ canvas {
 
 .btnss {
   font-size: 16px;
+  padding-top: 3px;
   margin: 5px;
   justify-content: space-between;
   height: 25px;

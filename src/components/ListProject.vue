@@ -10,7 +10,7 @@
       </button>
       <div class="list-group-project">
         <div v-for="project in projects" :key="project.name">
-          <button class="list-item">
+          <button class="list-item" @contextmenu.prevent="openContextMenu($event, project)">
             <router-link
               :to="{ name: 'edit', params: { projectName: project.name } }"
               style="text-decoration: none; color: #ffffff; font-size: 24px;"
@@ -36,6 +36,44 @@
         </button>
       </div>
     </dialog>
+
+    
+    <div v-if="contextMenuVisible" >
+      <ul class="context-menu" :style="contextMenuStyle">
+        <li @click="openDialogRename()">Переименовать проект</li>
+        <li @click="deleteProj()">Удалить проект</li>
+        <li @click="exportProjectImage">Выгрузить картинку</li>
+      </ul>
+    </div>
+    <dialog ref="diaDelete" class="dialogDel">
+      <h2 style="color: #ffffff;">Вы точно хотите удалить проект</h2>
+      <p style="font-size: 24px; color: #ffffff;">{{this.delName}} ?</p>
+      <div class="btnsDialog">
+        <button class="closeDialogDelete" @click="closeDialogDelete()">
+          <h4 style="margin: 0; padding: 0;">Отмена</h4>
+        </button>
+        <button class="delProjects" @click="deleteProject">
+          <h4 style="margin: 0; padding: 0;">Удалить</h4>
+        </button>
+      </div>
+    </dialog>
+    <dialog ref="diaRename" class="dialogRen">
+      <h2 style="color: #ffffff;">Введите название проекта</h2>
+      <input
+        class="inputs"
+        type="text"
+        v-model="newName"
+        :placeholder= "delName"
+      />
+      <div class="btnsDialog">
+        <button class="closeDialogRename" @click="closeDialogRename()">
+          <h4 style="margin: 0; padding: 0;">Отмена</h4>
+        </button>
+        <button class="saveProjRename" @click="renameProject">
+          <h4 style="margin: 0; padding: 0;">Переименовать</h4>
+        </button>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -44,17 +82,23 @@ const { remote } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+import { fabric } from "fabric";
 
 export default {
   name: "ListProject",
 
   data() {
     return {
+      canvas: null,
       projects: [],
       newProjectName: "",
-      // selectedFolderPath: localStorage.getItem('selectedFolderPath') || path.join(os.homedir(), 'Downloads'),
+      newName: "",
+      delName: "",
       selectedFolderPath: this.getDefaultFolderPath(),
       dialogVisible: false,
+      contextMenuVisible: false,
+      contextMenuStyle: {},
+      selectedProject: null,      
     };
   },
 
@@ -90,7 +134,6 @@ export default {
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
         const data = JSON.parse(content);
-        // Проверяем наличие ключей, которые могут указывать на то, что это проект
         return data.version || data.objects || data.canvas || data.canvas.version || data.canvas.objects;
       } catch (error) {
         return false;
@@ -148,7 +191,7 @@ export default {
           }
         });
       } else {
-        alert("Пожалуйста, выберите папку для сохранения проекта.");
+        alert("Пожалуйста, нажмите на логотип и выберите папку для сохранения проекта.");
       }
     },
     createProject() {
@@ -163,6 +206,108 @@ export default {
         name: "edit",
         params: { projectName: this.newProjectName },
       });
+    },
+    openContextMenu(event, project) {
+      this.contextMenuVisible = true;
+      this.contextMenuStyle = {
+        top: `${event.clientY}px`,
+        left: `${event.clientX}px`,
+      };
+      this.selectedProject = project;
+      console.log(this.selectedProject.name);
+      this.delName = this.selectedProject.name;
+    },
+
+    closeContextMenu() {
+      if (this.contextMenuVisible == true) {
+        this.contextMenuVisible = false;
+      }
+      this.selectedProject = null;
+    },
+
+    renameProject() {
+      if (this.selectedProject && this.newName.trim() !== "") {
+        const oldPath = path.join(this.selectedFolderPath, `${this.selectedProject.name}.json`);
+        const newPath = path.join(this.selectedFolderPath, `${this.newName}.json`);
+        fs.renameSync(oldPath, newPath);
+        this.loadProjects();
+        this.closeDialogRename();
+      } else {
+        console.error('Проект не выбран или новое имя пустое');
+      }
+    },
+
+    openDialogRename() {
+      if (this.selectedProject) {
+      this.dialogVisible = true;
+      this.$refs.diaRename.style.visibility = "visible";
+      this.$refs.diaRename.showModal();
+      this.contextMenuVisible = false;
+    } else {
+      console.error('Проект не выбран для переименования');
+    }
+    },
+    closeDialogRename() {
+      this.dialogVisible = false;
+      this.$refs.diaRename.style.visibility = "hidden";
+      this.$refs.diaRename.close();
+      this.closeContextMenu();
+    },
+
+    deleteProj() {
+      this.dialogVisible = true;
+      this.$refs.diaDelete.style.visibility = "visible";
+      this.$refs.diaDelete.showModal();
+      this.contextMenuVisible = false;
+    },
+    closeDialogDelete() {
+      this.dialogVisible = false;
+      this.$refs.diaDelete.style.visibility = "hidden";
+      this.$refs.diaDelete.close();
+      this.closeContextMenu();
+    },
+    deleteProject() {
+      if (this.selectedProject) {
+        const filePath = path.join(this.selectedFolderPath, `${this.selectedProject.name}.json`);
+        fs.unlinkSync(filePath);
+        this.loadProjects();
+      }
+      this.closeDialogDelete()
+    },
+
+    exportProjectImage() {      
+      const name = this.selectedProject.name;
+      const filePath = path.join(this.selectedFolderPath, `${name}.json`);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(content);
+
+      // Создаем временный canvas элемент
+      const canvas = document.createElement('canvas');
+      // Устанавливаем размеры canvas
+      canvas.width = data.canvas.width || 1280; // Если в данных нет размеров, используем значения по умолчанию
+      canvas.height = data.canvas.height || 835;
+
+      // Создаем fabric.Canvas
+      const fabricCanvas = new fabric.Canvas(canvas);
+
+      // Загружаем объекты на canvas
+      fabricCanvas.loadFromJSON(data.canvas, () => {
+        // Преобразуем canvas в data URL
+        const dataURL = fabricCanvas.toDataURL('image/png');
+
+        // Создаем ссылку для скачивания изображения
+        const link = document.createElement("a");
+        link.href = dataURL;
+        link.download = `${name}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Удаляем временный canvas элемент
+        canvas.remove();
+      });
+
+      this.closeContextMenu();
     },
   },
 };
@@ -205,6 +350,32 @@ export default {
   max-height: 70vh;
 }
 
+.context-menu {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.69);
+  border-radius: 15px;
+  border: none;
+  list-style: none;
+  padding: 5px 0;
+  margin: 0;
+  z-index: 1000;
+}
+
+.context-menu li {
+  background-color: rgba(255, 255, 255, 0.94);
+  margin: 4px 8px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: medium;
+  cursor: pointer;
+  /* list-style: none; */
+}
+
+.context-menu li:hover {
+  background-color: #eee;
+  border-radius: 12px;
+}
+
 .list-group-project {
   display: flex;
   flex-wrap: wrap;
@@ -243,7 +414,7 @@ export default {
   cursor: pointer;  
   background-color: #3498db;
 }
-.dialogNew {
+.dialogNew, .dialogDel, .dialogRen {
   border: none;
   display: flex;
   border-radius: 20px;
@@ -271,7 +442,7 @@ export default {
   margin: 20px 5px 5px 5px !important;
   justify-content: space-between;
 }
-.closeDialog {
+.closeDialog, .closeDialogDelete, .closeDialogRename{
   background-color: #F04444;
   color: #ffffff;
   border: none;
@@ -279,7 +450,7 @@ export default {
   height: 34px;
   width: 172px;
 }
-.saveProj {
+.saveProj, .delProjects, .saveProjRename {
   background-color: #39B400;
   color: #ffffff;
   border: none;
