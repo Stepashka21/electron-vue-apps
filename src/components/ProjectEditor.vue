@@ -413,15 +413,11 @@ export default {
       fonts: [
         "Times New Roman",
         "Pacifico",
-        "VT323",
-        "Quicksand",
-        "Inconsolata",
-        "Gwendolyn",
-        "Honk",
         "Montserrat",
         "Lato",
         "Playfair Display",
-        "Abril Fatface",
+        "Roboto",
+        "Inter"
       ],
       selectedFont: "Times New Roman",
       contextMenuPosition: { top: 0, left: 0 },
@@ -523,6 +519,11 @@ export default {
     onMouseUp() {
       if (!this.isSelecting || !this.selectionRect) return;
       this.isSelecting = false;
+
+      // Включить перемещение объектов обратно
+      this.canvas.forEachObject((obj) => {
+        obj.selectable = true;
+      });
     },
 
     confirmSelection() {
@@ -577,6 +578,10 @@ export default {
         this.canvas.remove(this.selectionRect);
         this.selectionRect = null;
       }
+      // Отключить перемещение объектов
+      this.canvas.forEachObject((obj) => {
+        obj.selectable = false;
+      });
     },
 
     openImageDialog() {
@@ -1151,15 +1156,16 @@ export default {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 @import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Pacifico&family=VT323&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Honk&family=Inconsolata:wdth@50&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Gwendolyn:wght@400;700&family=Pacifico&family=VT323&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+/* @import url("https://fonts.googleapis.com/css2?family=Pacifico&family=VT323&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Honk&family=Inconsolata:wdth@50&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Gwendolyn:wght@400;700&family=Pacifico&family=VT323&display=swap"); */
+/* @import url("https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"); */
 
 * {
   font-family: "Inter", sans-serif;
