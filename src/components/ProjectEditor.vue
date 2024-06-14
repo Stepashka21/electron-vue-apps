@@ -12,8 +12,8 @@
             top: `${contextMenuPosition.top}px`,
             left: `${contextMenuPosition.left}px`,
           }"
-          class="context-menu">
-
+          class="context-menu"
+        >
           <li @click="showRenameDialog">Переименовать проект</li>
           <li @click="goBack">Вернуться</li>
           <li @click="saveProject">Сохранить проект</li>
@@ -83,25 +83,38 @@
         </div>
 
         <div class="listBtn">
-          <button class="btnss" @click="startSelection" style="color: #ffffff" title="Выделить область">
+          <button
+            class="btnss"
+            @click="startSelection"
+            style="color: #ffffff"
+            title="Выделить область"
+          >
             <img class="imgIcons" :src="require('/src/assets/selectLay.png')" />
           </button>
         </div>
         <div class="listBtn">
-          <button class="btnss" @click="confirmSelection" style="color: #ffffff" title="Передать область">
-            <img class="imgIcons" :src="require('/src/assets/saveLay.png')"/>
+          <button
+            class="btnss"
+            @click="confirmSelection"
+            style="color: #ffffff"
+            title="Передать область"
+          >
+            <img class="imgIcons" :src="require('/src/assets/saveLay.png')" />
           </button>
         </div>
-        
+
         <div>
           <button class="btnss" @click="deleteEl" title="Удалить элемент">
-            <img class="imgIcons" :src="require('/src/assets/deleteEl.png')"/>
+            <img class="imgIcons" :src="require('/src/assets/deleteEl.png')" />
           </button>
         </div>
         <div>
           <button class="btnss" @click="clearCanvas" title="Очистить канвас">
-            <img class="imgIcons" :src="require('/src/assets/clearCanvas.png')"/>           
-        </button>
+            <img
+              class="imgIcons"
+              :src="require('/src/assets/clearCanvas.png')"
+            />
+          </button>
         </div>
 
         <div v-if="showFigureMenu" class="additionalMenu">
@@ -132,6 +145,18 @@
 
     <div class="rightPanel">
       <div class="elementSeting">
+        <div
+          v-if="isCropping"
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+          "
+        >
+          <button @click="confirmCrop">Подтвердить обрезку</button>
+          <button @click="cancelCrop">Отменить обрезку</button>
+        </div>
         <div v-if="selectedLayer && selectedLayer.object">
           <div class="viewSetings">
             <!-- <p>Выбранный элемент: {{ selectedLayer.name }}</p> -->
@@ -146,28 +171,38 @@
             />
 
             <!-- Параметры для картинки -->
-            <div style="display: flex; flex-direction: column; align-items: center" 
-              v-if="selectedLayer.object.type == 'image'">
+            <div
+              style="display: flex; flex-direction: column; align-items: center"
+              v-if="selectedLayer.object.type == 'image'"
+            >
               <!-- Кнопки фильтров -->
-              <div style="margin-top: 10px; display: flex; flex-direction: column; align-items: center">
-                <label style="margin-bottom: 0" >Фильтры:</label>
-                <div style="display: flex; flex-direction: column;">
-                  <button class="filterBtn" @click="applyFilter('grayscale')">Черно-белое</button>
-                  <button class="filterBtn" @click="applyFilter('sepia')">Сепия</button>
-                  <button class="filterBtn" @click="applyFilter('brightness')">Яркость</button>
-                  <button class="filterBtns" @click="clearFilters()">Очистить фильтры</button>
-                </div>  
+              <div
+                style="
+                  margin-top: 10px;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                "
+              >
+                <label style="margin-bottom: 0">Фильтры:</label>
+                <div style="display: flex; flex-direction: column">
+                  <button class="filterBtn" @click="applyFilter('grayscale')">
+                    Черно-белое
+                  </button>
+                  <button class="filterBtn" @click="applyFilter('sepia')">
+                    Сепия
+                  </button>
+                  <button class="filterBtn" @click="applyFilter('brightness')">
+                    Яркость
+                  </button>
+                  <button class="filterBtns" @click="clearFilters()">
+                    Очистить фильтры
+                  </button>
+                </div>
               </div>
-              <!-- <label class="lab">Прозрачность:</label>
-              <input
-                class="inputRigth"
-                type="range"
-                v-model="layerOpacity"
-                value="0"
-                max="1"
-                step="0.05"
-                id="opacity"
-              /> -->
+              <button v-if="!isCropping" class="cropBtn" @click="startCrop">
+                Обрезать
+              </button>
             </div>
 
             <!-- Параметры для объектов с цветом заливки -->
@@ -242,7 +277,7 @@
               />
               <label class="lab">Цвет:</label>
               <input type="color" v-model="layerColor" id="color" />
-              <label class="lab" >Прозрачность:</label>
+              <label class="lab">Прозрачность:</label>
               <input
                 class="inputRigth"
                 type="range"
@@ -273,9 +308,8 @@
                 </button>
               </div>
               <div class="textAlignButtons">
-               
-                  <label>Горизонтальное</label>
-                  <label style="margin-bottom: 10px">выравнивание:</label>
+                <label>Горизонтальное</label>
+                <label style="margin-bottom: 10px">выравнивание:</label>
 
                 <div class="textAlignBtn">
                   <button
@@ -319,9 +353,7 @@
             </div>
 
             <button class="btnsss" @click="saveSettings">
-              <p style="color: #ffffff; padding: 0; margin: 0">
-                Сохранить
-              </p>
+              <p style="color: #ffffff; padding: 0; margin: 0">Сохранить</p>
             </button>
           </div>
         </div>
@@ -369,7 +401,7 @@
         :src="selectedImageSrc"
         alt="Выделенная область"
         v-if="selectedImageSrc"
-        style="border: 1px solid black;"
+        style="border: 1px solid black"
       />
       <button class="closeDialog" @click="closeImageDialog">Закрыть</button>
     </dialog>
@@ -417,7 +449,7 @@ export default {
         "Lato",
         "Playfair Display",
         "Roboto",
-        "Inter"
+        "Inter",
       ],
       selectedFont: "Times New Roman",
       contextMenuPosition: { top: 0, left: 0 },
@@ -435,6 +467,12 @@ export default {
       startY: 0,
       selectedImageSrc: null,
       selectionRect: null, // передаваемая область
+      isCropping: false,
+      cropStartX: 0,
+      cropStartY: 0,
+      cropWidth: 0,
+      cropHeight: 0,
+      cropRect: null,
     };
   },
 
@@ -442,7 +480,7 @@ export default {
     // Переместили глобальную обработку событий на методы компонента
     document.addEventListener("dragover", this.handleDragOver, false);
     document.addEventListener("drop", this.handleDrop, false);
-    document.addEventListener('click', this.handleClickOutside);
+    document.addEventListener("click", this.handleClickOutside);
 
     this.canvas = new fabric.Canvas(this.$refs.canvas, {
       isDrawingMode: false,
@@ -460,7 +498,7 @@ export default {
   },
 
   beforeDestroy() {
-    document.removeEventListener('click', this.handleClickOutside);
+    document.removeEventListener("click", this.handleClickOutside);
   },
 
   methods: {
@@ -585,7 +623,7 @@ export default {
     },
 
     openImageDialog() {
-      if (this.selectedImageSrc){     
+      if (this.selectedImageSrc) {
         this.$refs.imageDialog.style.visibility = "visible";
         const img = new Image();
         img.onload = () => {
@@ -860,24 +898,41 @@ export default {
       this.canvas.add(text);
       this.addLayer(text);
     },
-    addListeners(layer) {
-      layer.object.onSelect = () => {
-        this.selectedLayer = layer;
-        layer.selected = true;
-      };
-      layer.object.onDeselect = () => {
-        layer.selected = false;
-        this.selectedLayer = null;
-      };
-    },
+
+    // это был выбор слоя и присваивание ему layer.selected = true или false
+    // addListeners(layer) {
+    //   layer.object.onSelect = () => {
+    //     this.selectedLayer = layer;
+    //     layer.selected = true;
+    //   };
+    //   layer.object.onDeselect = () => {
+    //     layer.selected = false;
+    //     this.selectedLayer = null;
+    //   };
+    // },
     deselectAll() {
       this.canvas.discardActiveObject();
       this.selectedLayer = null;
+      this.layers.forEach((layer) => {
+        layer.selected = false;
+      });
       this.canvas.renderAll();
     },
     selectLayer(layer) {
       if (layer.object) {
+        layer.object.onSelect = () => {
+          this.selectedLayer = layer;
+          layer.selected = true;
+        };
+        layer.object.onDeselect = () => {
+          if (!this.isCropping) {
+            layer.selected = false;
+            this.selectedLayer = null;
+          }
+        };
+        console.log(layer);
         console.log(layer.object);
+
         this.selectedLayer = layer;
         this.layerName = layer.name;
         this.layerWidth = layer.object.width * layer.object.scaleX;
@@ -1029,6 +1084,12 @@ export default {
         this.canvas.renderAll();
       }
     },
+
+    //
+    //
+    // Фильтры
+    //
+    //
     // Метод для применения фильтра к активному изображению
     applyFilter(type) {
       const activeObject = this.canvas.getActiveObject();
@@ -1060,6 +1121,146 @@ export default {
         this.canvas.renderAll();
       }
     },
+
+    startCrop() {
+      if (
+        this.selectedLayer &&
+        this.selectedLayer.object &&
+        this.selectedLayer.object.type === "image"
+      ) {
+        this.isCropping = true;
+        const image = this.selectedLayer.object;
+
+        // Создаем прямоугольник для выделения области обрезки
+        const cropArea = new fabric.Rect({
+          left: image.left,
+          top: image.top,
+          width: image.width * image.scaleX,
+          height: image.height * image.scaleY,
+          fill: "rgba(255, 255, 255, 0.3)",
+          selectable: true, // область для обрезки должна быть интерактивной
+          hasBorders: true,
+          hasControls: true,
+          stroke: "#000",
+          strokeWidth: 1,
+        });
+
+        this.canvas.add(cropArea);
+        this.canvas.setActiveObject(cropArea);
+        this.canvas.renderAll();
+
+        // Блокируем все остальные объекты
+        this.canvas.forEachObject((obj) => {
+          if (obj !== cropArea) {
+            obj.selectable = false;
+          }
+        });
+
+        this.cropArea = cropArea; // Сохраняем область для обрезки
+      }
+    },
+    confirmCrop() {
+      console.log(this.cropArea);
+      // console.log(this.selectedLayer);
+      // console.log(this.selectedLayer?.object);
+
+      if (this.cropArea && this.selectedLayer && this.selectedLayer.object) {
+        const activeObject = this.canvas.getActiveObject();
+        if (activeObject && activeObject === this.cropArea) {
+          // Получаем объект изображения
+          const image = this.selectedLayer.object;
+          const { left, top, width, height } = activeObject;
+
+          // Убедимся, что масштабирование определено
+          const scaleX = image.scaleX || 1;
+          const scaleY = image.scaleY || 1;
+
+          // Создаем временный канвас для обрезки
+          const tempCanvas = document.createElement("canvas");
+          const tempCtx = tempCanvas.getContext("2d");
+          tempCanvas.width = width; // Используем ширину прямоугольника обрезки
+          tempCanvas.height = height; // Используем высоту прямоугольника обрезки
+
+          // Пересчитываем координаты для функции drawImage
+          const offsetX = (left - image.left) / scaleX;
+          const offsetY = (top - image.top) / scaleY;
+          const cropWidth = width / scaleX;
+          const cropHeight = height / scaleY;
+
+          // Рисуем изображение на временном канвасе
+          tempCtx.drawImage(
+            image._element,
+            offsetX,
+            offsetY,
+            cropWidth,
+            cropHeight,
+            0,
+            0,
+            tempCanvas.width,
+            tempCanvas.height
+          );
+
+          // Создаем новое изображение из обрезанной области
+          const croppedImage = new fabric.Image(tempCanvas, {
+            left: activeObject.left,
+            top: activeObject.top,
+          });
+
+          // Убедимся, что selectedLayer и его объект не стали null
+          if (this.selectedLayer && this.selectedLayer.object) {
+            // Удаляем область для обрезки и исходный объект
+            this.canvas.remove(activeObject);
+            this.canvas.remove(this.selectedLayer);
+
+            // Добавляем обрезанное изображение на холст
+            this.canvas.add(croppedImage);
+
+            // Восстанавливаем интерактивность других объектов
+            this.canvas.forEachObject((obj) => {
+              obj.selectable = true;
+            });
+
+            // this.selectedLayer = {
+            //   object: croppedImage,
+            //   selected: true,
+            // };
+
+            this.canvas.setActiveObject(croppedImage);
+            this.canvas.renderAll();
+
+            this.cropArea = null; // Обнуляем область для обрезки
+            this.isCropping = false; // Завершаем режим обрезки
+          } else {
+            console.error(
+              "Selected layer or its object became null during cropping."
+            );
+          }
+        }
+      }
+    },
+    cancelCrop() {
+      if (this.cropArea) {
+        // Удаляем область для обрезки
+        this.canvas.remove(this.cropArea);
+
+        // Восстанавливаем интерактивность других объектов
+        this.canvas.forEachObject((obj) => {
+          obj.selectable = true;
+        });
+
+        this.cropArea = null; // Обнуляем область для обрезки
+        this.isCropping = false; // Завершаем режим обрезки
+
+        // Восстанавливаем выделение исходного объекта, если он существует
+        if (this.selectedLayer && this.selectedLayer.object) {
+          this.canvas.setActiveObject(this.selectedLayer.object);
+          this.canvas.renderAll();
+        } else {
+          console.error("Selected layer or object is null");
+        }
+      }
+    },
+
     handleSelection(e) {
       const activeObject = e.target;
       const selectedLayer = this.layers.find(
@@ -1154,18 +1355,12 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
-/* @import url("https://fonts.googleapis.com/css2?family=Pacifico&family=VT323&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Honk&family=Inconsolata:wdth@50&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Gwendolyn:wght@400;700&family=Pacifico&family=VT323&display=swap"); */
-/* @import url("https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"); */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
 * {
   font-family: "Inter", sans-serif;
@@ -1285,7 +1480,7 @@ canvas {
 .textAlignButtons div {
   display: flex;
   flex-direction: row;
-  justify-content: space-evenly;  
+  justify-content: space-evenly;
   width: 100%;
 }
 
@@ -1449,9 +1644,9 @@ textarea:active {
   margin-bottom: 5px;
 }
 .filterBtn {
-  margin-top: 5px; 
-  border: none;  
-  border-inline: none;  
+  margin-top: 5px;
+  border: none;
+  border-inline: none;
   border-radius: 7px;
   background-color: #ffffff;
 }
@@ -1459,9 +1654,9 @@ textarea:active {
   background-color: #d3d3d3;
 }
 .filterBtns {
-  margin-top: 5px; 
-  border: none;  
-  border-inline: none;  
+  margin-top: 5px;
+  border: none;
+  border-inline: none;
   border-radius: 7px;
   background-color: #a7a7a7;
 }
