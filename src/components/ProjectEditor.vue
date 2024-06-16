@@ -116,7 +116,15 @@
             />
           </button>
         </div>
-
+        <div>
+          <input v-model.number="canvasWidth" @input="onInputChange" type="number" placeholder="Ширина" />
+        </div>
+        <div>
+          <input v-model.number="canvasHeight" @input="onInputChange" type="number" placeholder="Высота" />
+        </div>
+        <div>
+          <button v-if="isChanged" @click="saveChanges">Сохранить</button>
+        </div>
         <div v-if="showFigureMenu" class="additionalMenu">
           <button class="btnss" @click="addRectangle">
             <img class="imgIcons" :src="require('/src/assets/rect.png')" />
@@ -473,6 +481,13 @@ export default {
       cropWidth: 0,
       cropHeight: 0,
       cropRect: null,
+
+      // для измменения канваса
+      canvasWidth: 1280,
+      canvasHeight: 835,
+      originalWidth: 500,
+      originalHeight: 500,
+      isChanged: false,
     };
   },
 
@@ -502,6 +517,19 @@ export default {
   },
 
   methods: {
+
+    onInputChange() {
+      this.isChanged = this.canvasWidth !== this.originalWidth || this.canvasHeight !== this.originalHeight;
+    },
+    saveChanges() {
+      this.canvas.setWidth(this.canvasWidth);
+      this.canvas.setHeight(this.canvasHeight);
+      this.originalWidth = this.canvasWidth;
+      this.originalHeight = this.canvasHeight;
+      this.canvas.renderAll();
+      this.isChanged = false;
+    },
+
     getDefaultFolderPath() {
       const documentsPath = path.join(os.homedir(), "Documents");
       const neuroEditorPath = path.join(documentsPath, "NeuroEditor");
@@ -924,12 +952,7 @@ export default {
           this.selectedLayer = layer;
           layer.selected = true;
         };
-        layer.object.onDeselect = () => {
-          if (!this.isCropping) {
-            layer.selected = false;
-            this.selectedLayer = null;
-          }
-        };
+        
         console.log(layer);
         console.log(layer.object);
 
@@ -1160,72 +1183,65 @@ export default {
       }
     },
     confirmCrop() {
-      console.log(this.cropArea); // Логируем текущее состояние cropArea для отладки
-
       if (this.cropArea && this.selectedLayer && this.selectedLayer.object) {
-        // Проверяем, что есть область для обрезки и выбранный слой с объектом
-        const activeObject = this.canvas.getActiveObject(); // Получаем текущий активный объект на холсте
+        const activeObject = this.canvas.getActiveObject();
         if (activeObject === this.cropArea) {
-          console.log("secseccful");
-          // Убедимся, что активный объект является областью для обрезки
-          // Получаем объект изображения, который будем обрезать
           const image = this.selectedLayer.object;
-          const { left, top, width, height } = this.cropArea; // Получаем координаты и размеры области для обрезки
+          if (!image || !image._element) {
+            console.error(
+              "Selected layer's object or its image element is null"
+            );
+            return;
+          }
 
-          // Убедимся, что масштабирование определено, если нет, используем значение по умолчанию 1
+          const { left, top, width, height } = this.cropArea;
           const scaleX = image.scaleX || 1;
           const scaleY = image.scaleY || 1;
 
-          // Создаем временный канвас для обрезки
           const tempCanvas = document.createElement("canvas");
           const tempCtx = tempCanvas.getContext("2d");
-          tempCanvas.width = width; // Устанавливаем ширину временного канваса равной ширине области обрезки
-          tempCanvas.height = height; // Устанавливаем высоту временного канваса равной высоте области обрезки
+          tempCanvas.width = width;
+          tempCanvas.height = height;
 
-          // Пересчитываем координаты и размеры для функции drawImage с учетом масштаба изображения
-          const offsetX = (left - image.left) / scaleX; // Смещение по X с учетом масштаба
-          const offsetY = (top - image.top) / scaleY; // Смещение по Y с учетом масштаба
-          const cropWidth = width / scaleX; // Ширина области обрезки с учетом масштаба
-          const cropHeight = height / scaleY; // Высота области обрезки с учетом масштаба
+          const offsetX = (left - image.left) / scaleX;
+          const offsetY = (top - image.top) / scaleY;
+          const cropWidth = width / scaleX;
+          const cropHeight = height / scaleY;
 
-          // Рисуем изображение на временном канвасе
           tempCtx.drawImage(
-            image._element, // Исходное изображение
-            offsetX, // Смещение по X внутри исходного изображения
-            offsetY, // Смещение по Y внутри исходного изображения
-            cropWidth, // Ширина области из исходного изображения для обрезки
-            cropHeight, // Высота области из исходного изображения для обрезки
-            0, // Смещение по X на временном канвасе
-            0, // Смещение по Y на временном канвасе
-            tempCanvas.width, // Ширина на временном канвасе (соответствует ширине области обрезки)
-            tempCanvas.height // Высота на временном канвасе (соответствует высоте области обрезки)
+            image._element,
+            offsetX,
+            offsetY,
+            cropWidth,
+            cropHeight,
+            0,
+            0,
+            tempCanvas.width,
+            tempCanvas.height
           );
 
-          // Создаем новое изображение из обрезанной области
           const croppedImage = new fabric.Image(tempCanvas, {
-            left: this.cropArea.left, // Устанавливаем левую координату нового изображения
-            top: this.cropArea.top, // Устанавливаем верхнюю координату нового изображения
+            left: this.cropArea.left,
+            top: this.cropArea.top,
+            scaleX: scaleX,
+            scaleY: scaleY,
           });
 
-          // Удаляем область для обрезки и исходный объект
           this.canvas.remove(this.cropArea);
-          this.canvas.remove(this.selectedLayer.object);
+          // this.canvas.remove(this.selectedLayer.object);
 
-          // Добавляем обрезанное изображение на холст
           this.canvas.add(croppedImage);
 
-          // Восстанавливаем интерактивность других объектов на холсте
           this.canvas.forEachObject((obj) => {
             obj.selectable = true;
           });
 
-          // Устанавливаем обрезанное изображение как активный объект и перерисовываем холст
           this.canvas.setActiveObject(croppedImage);
           this.canvas.renderAll();
 
-          // Сбрасываем состояние обрезки
-          this.cropArea = null; // Обнуляем область для обрезки
-          this.isCropping = false; // Завершаем режим обрезки
+          this.cropArea = null;
+          this.isCropping = false;
+          // this.selectedLayer.object = croppedImage;
         }
       }
     },
@@ -1424,21 +1440,23 @@ export default {
   border-radius: 12px;
 }
 .canav {
-  width: 1280px;
-  height: 835;
+  /* width: 1280px;
+  height: 835; */
   background-color: #ffffff;
+  padding-right: 2px;
 }
 canvas {
-  border: 2px solid #000000;
+  border: 1px solid #000000;
 }
 
 .buttunsGrid {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  width: 1284px;
+  /* width: 1284px; */
   height: 34px;
   margin-top: 0px;
+  padding-left: px;
   background-color: #2c2c2c;
   border-radius: 8px 8px 0 0;
 }
