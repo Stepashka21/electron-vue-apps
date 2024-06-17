@@ -24,7 +24,6 @@ const ctx = canvas.getContext('2d');
 const maskCanvas = document.createElement('canvas');
 const maskCtx = maskCanvas.getContext('2d');
 
-
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
@@ -175,6 +174,7 @@ function formatTime(timeInSeconds) {
 	const seconds = Math.floor(timeInSeconds % 60);
 	return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
+
 function allowDrop(event) {
     event.preventDefault();
 }
@@ -187,107 +187,105 @@ function drop(event) {
         const image = new Image();
         image.src = e.target.result;
         image.onload = function () {
+
             width = image.width;
             height = image.height;
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const aspectRatio = image.width / image.height;
-            let drawWidth, drawHeight, offsetX, offsetY;
 
-            if (image.width > image.height) {
-                drawWidth = canvas.width;
-                drawHeight = canvas.width / aspectRatio;
-                offsetX = 0;
-                offsetY = (canvas.height - drawHeight) / 2;
+            if (aspectRatio > 1) {
+                canvas.width = 512;
+                canvas.height = 512 / aspectRatio;
             } else {
-                drawHeight = canvas.height;
-                drawWidth = canvas.height * aspectRatio;
-                offsetX = (canvas.width - drawWidth) / 2;
-                offsetY = 0;
+                canvas.height = 512;
+                canvas.width = 512 * aspectRatio;
             }
 
-            ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
             originalImageDataURL = canvas.toDataURL();
+            
             placeholder.style.display = 'none';
             droppedImage.style.display = 'none';
             droppedImage.src = originalImageDataURL;
             canvas.style.display = 'block';
-        }
-    }
+
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+        };
+    };
     reader.readAsDataURL(file);
 }
 
 canvas.addEventListener('mousedown', (e) => {
-	isDrawing = true;
-	[lastX, lastY] = [e.offsetX, e.offsetY];
+    isDrawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
 });
 
 canvas.addEventListener('mousemove', draw);
 
 canvas.addEventListener('mouseup', () => {
-	isDrawing = false;
-	history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    isDrawing = false;
+    history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
 });
+
 canvas.addEventListener('mouseout', () => isDrawing = false);
 
 function draw(e) {
-	if (!isDrawing) return;
-	ctx.strokeStyle = '#fff';
-	ctx.lineJoin = 'round';
-	ctx.lineCap = 'round';
-	ctx.lineWidth = brushSize;
-	ctx.beginPath();
-	ctx.moveTo(lastX, lastY);
-	ctx.lineTo(e.offsetX, e.offsetY);
-	ctx.stroke();
-	[lastX, lastY] = [e.offsetX, e.offsetY];
+    if (!isDrawing) return;
+    ctx.strokeStyle = '#fff';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = brushSize;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
 }
 
 document.getElementById('brush-slider').addEventListener('input', function () {
-	brushSize = parseInt(this.value);
+    brushSize = parseInt(this.value);
 });
 
-
 document.getElementById('undo-button').addEventListener('click', function () {
-	if (history.length > 0) {
-		history.pop();
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		if (history.length > 0) {
-			for (let i = 0; i < history.length; i++) {
-				ctx.putImageData(history[i], 0, 0);
-			}
-		} else {
-			ctx.putImageData(originalImage, 0, 0);
-		}
-	}
+    if (history.length > 0) {
+        history.pop();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (history.length > 0) {
+            for (let i = 0; i < history.length; i++) {
+                ctx.putImageData(history[i], 0, 0);
+            }
+        } else {
+            ctx.putImageData(originalImage, 0, 0);
+        }
+    }
 });
 
 function saveMask() {
-	const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-	for (let i = 0; i < imageData.data.length; i += 4) {
-		const r = imageData.data[i];
-		const g = imageData.data[i + 1];
-		const b = imageData.data[i + 2];
-		const a = imageData.data[i + 3];
-		if (r !== 255 || g !== 255 || b !== 255 || a === 0) {
-			imageData.data[i] = 0;
-			imageData.data[i + 1] = 0;
-			imageData.data[i + 2] = 0;
-			imageData.data[i + 3] = 255;
-		}
-	}
-	const tempCanvas = document.createElement('canvas');
-	const tempCtx = tempCanvas.getContext('2d');
-	tempCanvas.width = canvas.width;
-	tempCanvas.height = canvas.height;
-	tempCtx.putImageData(imageData, 0, 0);
-	maskDataURL = tempCanvas.toDataURL();
-	console.log(maskDataURL);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+        const r = imageData.data[i];
+        const g = imageData.data[i + 1];
+        const b = imageData.data[i + 2];
+        const a = imageData.data[i + 3];
+        if (r !== 255 || g !== 255 || b !== 255 || a === 0) {
+            imageData.data[i] = 0;
+            imageData.data[i + 1] = 0;
+            imageData.data[i + 2] = 0;
+            imageData.data[i + 3] = 255;
+        }
+    }
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    tempCtx.putImageData(imageData, 0, 0);
+    maskDataURL = tempCanvas.toDataURL();
+    console.log(maskDataURL);
 }
-
 
 function loadImageFromURL() {
     const params = new URLSearchParams(window.location.search);
@@ -296,44 +294,46 @@ function loadImageFromURL() {
         const image = new Image();
         image.src = `data:image/png;base64,${imageSrc}`;
         image.onload = function () {
-            const ctx = canvas.getContext('2d');
+        
             width = image.width;
             height = image.height;
-            canvas.width = 512;
-            canvas.height = 512;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const aspectRatio = image.width / image.height;
-            let drawWidth, drawHeight, offsetX, offsetY;
 
-            if (image.width > image.height) {
-                drawWidth = canvas.width;
-                drawHeight = canvas.width / aspectRatio;
-                offsetX = 0;
-                offsetY = (canvas.height - drawHeight) / 2;
+            if (aspectRatio > 1) {
+                canvas.width = 512;
+                canvas.height = 512 / aspectRatio;
             } else {
-                drawHeight = canvas.height;
-                drawWidth = canvas.height * aspectRatio;
-                offsetX = (canvas.width - drawWidth) / 2;
-                offsetY = 0;
+                canvas.height = 512;
+                canvas.width = 512 * aspectRatio;
             }
 
-            ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
             originalImageDataURL = canvas.toDataURL();
+            
             placeholder.style.display = 'none';
             droppedImage.style.display = 'none';
             droppedImage.src = originalImageDataURL;
             canvas.style.display = 'block';
+
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
         };
     }
-	document.getElementById('editImgtoimg').addEventListener('click', function () {
-		const displayedImageSrc = images[currentIndex];
-		const encodedImage = encodeURIComponent(displayedImageSrc);
-		window.location.href = `imgtoimg.html?image=${encodedImage}`;
-	});
-	document.getElementById('editUpscale').addEventListener('click', function () {
-		const displayedImageSrc = images[currentIndex];
-		const encodedImage = encodeURIComponent(displayedImageSrc);
-		window.location.href = `upscale.html?image=${encodedImage}`;
-	});
 }
+
+document.getElementById('editImgtoimg').addEventListener('click', function () {
+    const displayedImageSrc = images[currentIndex];
+    const encodedImage = encodeURIComponent(displayedImageSrc);
+    window.location.href = `imgtoimg.html?image=${encodedImage}`;
+});
+
+document.getElementById('editUpscale').addEventListener('click', function () {
+    const displayedImageSrc = images[currentIndex];
+    const encodedImage = encodeURIComponent(displayedImageSrc);
+    window.location.href = `upscale.html?image=${encodedImage}`;
+});
+

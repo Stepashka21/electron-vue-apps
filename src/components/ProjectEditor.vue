@@ -117,6 +117,14 @@
           </button>
         </div>
         <div>
+          <button class="btnss" @click="toggleDraw" title="Кисть">
+            <img
+              class="imgIcons"
+              :src="require('/src/assets/pen.png')"
+            />
+          </button>
+        </div>
+        <div>
           <input v-model.number="canvasWidth" @input="onInputChange" type="number" placeholder="Ширина" />
         </div>
         <div>
@@ -130,6 +138,21 @@
             <img class="imgIcons" :src="require('/src/assets/rect.png')" />
             <span style="color: #ffffff">Квадрат</span>
             <!--квадрат/прямоугольник-->
+          </button>
+          <button class="btnss" @click="addLine">
+            <img class="imgIcons" :src="require('/src/assets/rect.png')" />
+            <span style="color: #ffffff">Линия</span>
+            <!--Линия-->
+          </button>
+          <button class="btnss" @click="addStar">
+            <img class="imgIcons" :src="require('/src/assets/rect.png')" />
+            <span style="color: #ffffff">Звезда</span>
+            <!--Звезда-->
+          </button>
+          <button class="btnss" @click="addTriangle">
+            <img class="imgIcons" :src="require('/src/assets/rect.png')" />
+            <span style="color: #ffffff">Треугольник</span>
+            <!--Треугольник-->
           </button>
           <button class="btnss" @click="addCircle">
             <img class="imgIcons" :src="require('/src/assets/circle.png')" />
@@ -153,6 +176,16 @@
 
     <div class="rightPanel">
       <div class="elementSeting">
+        <!-- Секция настроек для рисования -->
+        <div v-if="isDrawingMode">
+          <h3>Настройки линии</h3>
+          <label for="strokeWidth">Толщина линии:</label>
+          <input type="number" v-model="drawingSettings.strokeWidth" id="strokeWidth" min="1" />
+
+          <label for="strokeColor">Цвет линии:</label>
+          <input type="color" v-model="drawingSettings.strokeColor" id="strokeColor" />
+        </div>
+
         <div
           v-if="isCropping"
           style="
@@ -488,6 +521,13 @@ export default {
       originalWidth: 500,
       originalHeight: 500,
       isChanged: false,
+      
+      // для рисования
+      isDrawingMode: false,
+      drawingSettings: {
+        strokeWidth: 2,
+        strokeColor: '#000000'
+      }
     };
   },
 
@@ -849,11 +889,7 @@ export default {
 
     //
     //
-    //
-    //
-    // ДОБАВЛЕНИЕ НА КАНВАС ФИГУР // КАРТИНКИ
-    //
-    //
+    // ДОБАВЛЕНИЕ НА КАНВАС ФИГУР // КАРТИНКИ // ТЕКСТА
     //
     //
     addRectangle() {
@@ -883,6 +919,58 @@ export default {
       });
       this.canvas.add(circle);
       this.addLayer(circle);
+      this.viewFigure();
+    },
+    addLine() {
+      const line = new fabric.Line([50, 50, 200, 50], {
+        id: this.generateId(),
+        name: "Line",
+        stroke: '#000000',
+        strokeWidth: 2,
+        selectable: true,
+      });
+      this.canvas.add(line);
+      this.addLayer(line);
+      this.viewFigure();
+    },
+    addTriangle() {
+      const triangle = new fabric.Triangle({
+        id: this.generateId(),
+        name: "Triangle",
+        width: 100,
+        height: 100,
+        fill: `#000000`,
+        left: 50,
+        top: 50,
+        selectable: true,
+      });
+      this.canvas.add(triangle);
+      this.addLayer(triangle);
+      this.viewFigure();
+    },
+    addStar() {
+      const points = [
+        { x: 50, y: 0 },
+        { x: 61, y: 35 },
+        { x: 98, y: 35 },
+        { x: 68, y: 57 },
+        { x: 79, y: 91 },
+        { x: 50, y: 70 },
+        { x: 21, y: 91 },
+        { x: 32, y: 57 },
+        { x: 2, y: 35 },
+        { x: 39, y: 35 },
+      ];
+      const star = new fabric.Polygon(points, {
+        id: this.generateId(),
+        name: "Star",
+        fill: `#000000`,
+        left: 50,
+        top: 50,
+        selectable: true,
+      });
+      this.canvas.add(star);
+      this.addLayer(star);
       this.viewFigure();
     },
     addImg() {
@@ -926,6 +1014,37 @@ export default {
       this.canvas.add(text);
       this.addLayer(text);
     },
+    toggleDraw() {
+    this.isDrawingMode = !this.isDrawingMode;
+    this.canvas.isDrawingMode = this.isDrawingMode;
+
+    if (this.isDrawingMode) {
+      const self = this;
+
+      function onPathCreated(event) {
+        const path = event.path;
+        path.set({
+          id: self.generateId(),
+          name: "Drawing",
+          selectable: true,
+          strokeWidth: self.drawingSettings.strokeWidth,
+          stroke: self.drawingSettings.strokeColor
+        });
+        self.addLayer(path);
+        self.viewFigure();
+      }
+
+      this.canvas.on('path:created', onPathCreated);
+      this.drawingHandlers = { onPathCreated };
+    } else {
+      this.canvas.off('path:created', this.drawingHandlers.onPathCreated);
+    }
+
+    this.canvas.getObjects().forEach(obj => {
+      obj.selectable = !this.isDrawingMode;
+    });
+  },
+
 
     // это был выбор слоя и присваивание ему layer.selected = true или false
     // addListeners(layer) {
@@ -976,11 +1095,7 @@ export default {
 
     //
     //
-    //
-    //
     // СОХРАНЕНИЕ ПРОЕКТА
-    //
-    //
     //
     //
     saveProject() {
@@ -1305,21 +1420,82 @@ export default {
       if (this.selectedLayer) {
         const object = this.selectedLayer.object;
         this.selectedLayer.name = this.layerName;
-        object.set({
-          width: parseFloat(this.layerWidth),
-          height: parseFloat(this.layerHeight),
-          fill: this.layerColor,
-          opacity: parseFloat(this.layerOpacity),
-        });
-        if (object.type === "textbox") {
+
+        // Если объект - изображение, устанавливаем фактические размеры
+        if (object.type === 'image') {
+          const scaleX = parseFloat(this.layerWidth) / object.width;
+          const scaleY = parseFloat(this.layerHeight) / object.height;
+          object.set({
+            scaleX: scaleX,
+            scaleY: scaleY
+          });
+        } else {
+          // Для остальных объектов используем set
+          object.set({
+            width: parseFloat(this.layerWidth),
+            height: parseFloat(this.layerHeight),
+            fill: this.layerColor,
+            opacity: parseFloat(this.layerOpacity),
+          });
+        }
+
+        if (object.type === 'textbox') {
           object.set({
             fontFamily: this.selectedFont,
             fontSize: parseFloat(this.layerFontSize),
           });
         }
+
         this.canvas.renderAll();
       }
+      
+      // if (this.selectedLayer) {
+      //   const object = this.selectedLayer.object;
+      //   this.selectedLayer.name = this.layerName;
+
+      //   // Если объект - изображение, используем scaleToWidth и scaleToHeight
+      //   if (object.type === 'image') {
+      //     object.scaleToWidth(parseFloat(this.layerWidth));
+      //     object.scaleToHeight(parseFloat(this.layerHeight));
+      //   } else {
+      //     // Для остальных объектов используем set
+      //     object.set({
+      //       width: parseFloat(this.layerWidth),
+      //       height: parseFloat(this.layerHeight),
+      //       fill: this.layerColor,
+      //       opacity: parseFloat(this.layerOpacity),
+      //     });
+      //   }
+
+      //   if (object.type === 'textbox') {
+      //     object.set({
+      //       fontFamily: this.selectedFont,
+      //       fontSize: parseFloat(this.layerFontSize),
+      //     });
+      //   }
+
+      //   this.canvas.renderAll();
+      // }
     },
+      // Сохранение параметров как будто обрезка изображения
+      // if (this.selectedLayer) {
+      //   const object = this.selectedLayer.object;
+      //   this.selectedLayer.name = this.layerName;
+      //   object.set({
+      //     width: parseFloat(this.layerWidth),
+      //     height: parseFloat(this.layerHeight),
+      //     fill: this.layerColor,
+      //     opacity: parseFloat(this.layerOpacity),
+      //   });
+      //   if (object.type === "textbox") {
+      //     object.set({
+      //       fontFamily: this.selectedFont,
+      //       fontSize: parseFloat(this.layerFontSize),
+      //     });
+      //   }
+      //   this.canvas.renderAll();
+      // }
+    
 
     changeTextAlignment(alignment) {
       this.selectedTextAlign = alignment;

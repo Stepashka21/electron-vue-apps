@@ -211,8 +211,8 @@ function loadImageFromURL() {
             const ctx = canvas.getContext('2d');
             width = image.width;
             height = image.height;
-            canvas.width = 512;
-            canvas.height = 512;
+            canvas.width = image.width;
+            canvas.height = image.height;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const aspectRatio = image.width / image.height;

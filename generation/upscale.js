@@ -146,8 +146,8 @@ function drop(event) {
         image.onload = function () {
             width = image.width;
             height = image.height;
-            canvas.width = 512;
-            canvas.height = 512;
+            canvas.width = image.width;
+            canvas.height = image.height;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
