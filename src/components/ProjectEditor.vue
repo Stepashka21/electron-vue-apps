@@ -124,14 +124,14 @@
             />
           </button>
         </div>
-        <div>
-          <input v-model.number="canvasWidth" @input="onInputChange" type="number" placeholder="Ширина" />
+        <div style="display: flex; align-items: center;">
+          <input v-model.number="canvasWidth" @input="onInputChange" type="number" placeholder="Ширина"  class="inputCenter"/>
         </div>
-        <div>
-          <input v-model.number="canvasHeight" @input="onInputChange" type="number" placeholder="Высота" />
+        <div style="display: flex; align-items: center;">
+          <input v-model.number="canvasHeight" @input="onInputChange" type="number" placeholder="Высота" class="inputCenter"/>
         </div>
-        <div>
-          <button v-if="isChanged" @click="saveChanges">Сохранить</button>
+        <div style="display: flex; align-items: center;">
+          <button v-if="isChanged" @click="saveChanges" class="btnsSave">Сохранить</button>
         </div>
         <div v-if="showFigureMenu" class="additionalMenu">
           <button class="btnss" @click="addRectangle">
@@ -1583,13 +1583,17 @@ export default {
 }
 .canvasPanel {
   margin-top: 9px;
+  width: 74vw;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 .divLayer {
   display: flex;
   flex-direction: column;
   align-items: center;
   background-color: #2c2c2c;
-  margin-top: 29px;
+  margin-top: 7px;
   border-radius: 12px;
   height: 89vh;
 }
@@ -1629,12 +1633,12 @@ canvas {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  /* width: 1284px; */
-  height: 34px;
+  width: auto;
+  height: 45px;
   margin-top: 0px;
-  padding-left: px;
+  margin-bottom: 5px;
   background-color: #2c2c2c;
-  border-radius: 8px 8px 0 0;
+  border-radius: 8px;
 }
 .btnBlock {
   display: flex;
@@ -1651,6 +1655,19 @@ canvas {
 }
 .imgBtns {
   width: 28px;
+}
+.inputCenter {
+  width: 90%;
+  margin-right: 6px;
+  border: none;
+  border-inline: none;
+  border-radius: 7px;
+  font-size: 16px;
+}
+.inputCenter:active {
+  border: none;
+  border-inline: none;
+  border-radius: 7px;
 }
 .textAlignButtons {
   margin: 10px 0;
@@ -1695,10 +1712,10 @@ canvas {
 
 .btnss {
   font-size: 16px;
-  padding-top: 3px;
+  padding-top: 4px;
   margin: 5px;
   justify-content: space-between;
-  height: 25px;
+  height: 35px;
   border-radius: 10px;
   border: none;
   border-inline: none;
@@ -1712,7 +1729,7 @@ canvas {
   font-size: 16px;
   margin: 5px;
   justify-content: space-between;
-  height: 25px;
+  height: 30px;
   border-radius: 10px;
   border: none;
   border-inline: none;
@@ -1721,6 +1738,21 @@ canvas {
 .btnsss:hover {
   cursor: pointer;
   background-color: #0c8ce9;
+}
+.btnsSave {
+  font-size: 16px;
+  margin: 5px 15px 5px 5px;
+  justify-content: space-between;
+  height: 25px;
+  border-radius: 10px;
+  border: none;
+  border-inline: none;
+  background-color: #919191;
+  color: #000000;
+}
+.btnsSave:hover {
+  cursor: pointer;
+  background-color: #e7e7e7;
 }
 
 .querySelectionPanel {
@@ -1810,7 +1842,7 @@ textarea:active {
 }
 
 .imgIcons {
-  width: 20px;
+  width: 25px;
 }
 
 .inputRigth {
