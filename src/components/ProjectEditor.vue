@@ -3,21 +3,26 @@
     <div class="overlay" v-if="dialogVisible"></div>
     <div class="leftPanel">
       <div class="nameProj">
-        <h2 class="headNameProj" @click="toggleContextMenu" ref="headNameProj">
+        <h2 class="headNameProj" @contextmenu.prevent="openContextMenu($event)" ref="headNameProj">
           {{ projectName }}
         </h2>
         <ul
           v-if="showContextMenu"
+          ref="contextMenu"
           :style="{
             top: `${contextMenuPosition.top}px`,
             left: `${contextMenuPosition.left}px`,
           }"
           class="context-menu"
         >
-          <li @click="showRenameDialog">Переименовать проект</li>
+          <li @click="handleOption('rename')">Переименовать проект</li>
+          <li @click="handleOption('goBack')">Вернуться</li>
+          <li @click="handleOption('saveProject')">Сохранить проект</li>
+          <li @click="handleOption('saveCanvasAsImage')">Сохранить как картинку</li>
+          <!-- <li @click="showRenameDialog">Переименовать проект</li>
           <li @click="goBack">Вернуться</li>
           <li @click="saveProject">Сохранить проект</li>
-          <li @click="saveCanvasAsImage">Сохранить как картинку</li>
+          <li @click="saveCanvasAsImage">Сохранить как картинку</li> -->
         </ul>
       </div>
       <!-- <router-link :to="{ name: 'ReplaceDialog' }">Перейти на страницу Replace</router-link> -->
@@ -52,7 +57,7 @@
     <div class="canvasPanel">
       <div class="buttunsGrid">
         <div class="listBtn">
-          <button class="btnss" @click="deselectAll" title="Сброс выделения">
+          <button class="btnss" @click="deselectAll" title="Сброс выбора">
             <img class="imgIcons" :src="require('/src/assets/kursor.png')" />
           </button>
         </div>
@@ -118,20 +123,31 @@
         </div>
         <div>
           <button class="btnss" @click="toggleDraw" title="Кисть">
-            <img
-              class="imgIcons"
-              :src="require('/src/assets/pen.png')"
-            />
+            <img class="imgIcons" :src="require('/src/assets/pen.png')" />
           </button>
         </div>
-        <div style="display: flex; align-items: center;">
-          <input v-model.number="canvasWidth" @input="onInputChange" type="number" placeholder="Ширина"  class="inputCenter"/>
+        <div style="display: flex; align-items: center">
+          <input
+            v-model.number="canvasWidth"
+            @input="onInputChange"
+            type="number"
+            placeholder="Ширина"
+            class="inputCenter"
+          />
         </div>
-        <div style="display: flex; align-items: center;">
-          <input v-model.number="canvasHeight" @input="onInputChange" type="number" placeholder="Высота" class="inputCenter"/>
+        <div style="display: flex; align-items: center">
+          <input
+            v-model.number="canvasHeight"
+            @input="onInputChange"
+            type="number"
+            placeholder="Высота"
+            class="inputCenter"
+          />
         </div>
-        <div style="display: flex; align-items: center;">
-          <button v-if="isChanged" @click="saveChanges" class="btnsSave">Сохранить</button>
+        <div style="display: flex; align-items: center">
+          <button v-if="isChanged" @click="saveChanges" class="btnsSave">
+            Сохранить
+          </button>
         </div>
         <div v-if="showFigureMenu" class="additionalMenu">
           <button class="btnss" @click="addRectangle">
@@ -180,24 +196,21 @@
         <div v-if="isDrawingMode">
           <h3>Настройки линии</h3>
           <label for="strokeWidth">Толщина линии:</label>
-          <input type="number" v-model="drawingSettings.strokeWidth" id="strokeWidth" min="1" />
+          <input
+            type="number"
+            v-model="drawingSettings.strokeWidth"
+            id="strokeWidth"
+            min="1"
+          />
 
           <label for="strokeColor">Цвет линии:</label>
-          <input type="color" v-model="drawingSettings.strokeColor" id="strokeColor" />
+          <input
+            type="color"
+            v-model="drawingSettings.strokeColor"
+            id="strokeColor"
+          />
         </div>
 
-        <div
-          v-if="isCropping"
-          style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 10px;
-          "
-        >
-          <button @click="confirmCrop">Подтвердить обрезку</button>
-          <button @click="cancelCrop">Отменить обрезку</button>
-        </div>
         <div v-if="selectedLayer && selectedLayer.object">
           <div class="viewSetings">
             <!-- <p>Выбранный элемент: {{ selectedLayer.name }}</p> -->
@@ -241,9 +254,9 @@
                   </button>
                 </div>
               </div>
-              <button v-if="!isCropping" class="cropBtn" @click="startCrop">
+              <!-- <button v-if="!isCropping" class="cropBtn" @click="startCrop">
                 Обрезать
-              </button>
+              </button> -->
             </div>
 
             <!-- Параметры для объектов с цветом заливки -->
@@ -471,8 +484,8 @@ export default {
   data() {
     return {
       canvas: null,
-      dataValue: "",
       showContextMenu: false,
+      contextMenuPosition: { top: 0, left: 0 },
       projectName: "",
       newProjectName: "",
       projectFilePath: "",
@@ -481,7 +494,6 @@ export default {
       selectedLayer: null,
       showFigureMenu: false,
       jsonData: null,
-      selectionPosition: null,
       selectedFolderPath: this.getDefaultFolderPath(),
       fonts: [
         "Times New Roman",
@@ -493,7 +505,6 @@ export default {
         "Inter",
       ],
       selectedFont: "Times New Roman",
-      contextMenuPosition: { top: 0, left: 0 },
       layerName: "",
       layerColor: "",
       layerOpacity: "",
@@ -508,12 +519,6 @@ export default {
       startY: 0,
       selectedImageSrc: null,
       selectionRect: null, // передаваемая область
-      isCropping: false,
-      cropStartX: 0,
-      cropStartY: 0,
-      cropWidth: 0,
-      cropHeight: 0,
-      cropRect: null,
 
       // для измменения канваса
       canvasWidth: 1280,
@@ -521,13 +526,13 @@ export default {
       originalWidth: 500,
       originalHeight: 500,
       isChanged: false,
-      
+
       // для рисования
       isDrawingMode: false,
       drawingSettings: {
         strokeWidth: 2,
-        strokeColor: '#000000'
-      }
+        strokeColor: "#000000",
+      },
     };
   },
 
@@ -535,7 +540,7 @@ export default {
     // Переместили глобальную обработку событий на методы компонента
     document.addEventListener("dragover", this.handleDragOver, false);
     document.addEventListener("drop", this.handleDrop, false);
-    document.addEventListener("click", this.handleClickOutside);
+    document.addEventListener('click', this.handleClickOutside);
 
     this.canvas = new fabric.Canvas(this.$refs.canvas, {
       isDrawingMode: false,
@@ -553,13 +558,14 @@ export default {
   },
 
   beforeDestroy() {
-    document.removeEventListener("click", this.handleClickOutside);
+    document.removeEventListener('click', this.handleClickOutside);
   },
 
   methods: {
-
     onInputChange() {
-      this.isChanged = this.canvasWidth !== this.originalWidth || this.canvasHeight !== this.originalHeight;
+      this.isChanged =
+        this.canvasWidth !== this.originalWidth ||
+        this.canvasHeight !== this.originalHeight;
     },
     saveChanges() {
       this.canvas.setWidth(this.canvasWidth);
@@ -925,7 +931,7 @@ export default {
       const line = new fabric.Line([50, 50, 200, 50], {
         id: this.generateId(),
         name: "Line",
-        stroke: '#000000',
+        stroke: "#000000",
         strokeWidth: 2,
         selectable: true,
       });
@@ -1015,51 +1021,41 @@ export default {
       this.addLayer(text);
     },
     toggleDraw() {
-    this.isDrawingMode = !this.isDrawingMode;
-    this.canvas.isDrawingMode = this.isDrawingMode;
+      this.isDrawingMode = !this.isDrawingMode;
+      this.canvas.isDrawingMode = this.isDrawingMode;
 
-    if (this.isDrawingMode) {
-      const self = this;
+      if (this.isDrawingMode) {
+        const self = this;
 
-      function onPathCreated(event) {
-        const path = event.path;
-        path.set({
-          id: self.generateId(),
-          name: "Drawing",
-          selectable: true,
-          strokeWidth: self.drawingSettings.strokeWidth,
-          stroke: self.drawingSettings.strokeColor
-        });
-        self.addLayer(path);
-        self.viewFigure();
+        function onPathCreated(event) {
+          const path = event.path;
+          path.set({
+            id: self.generateId(),
+            name: "Drawing",
+            selectable: true,
+            strokeWidth: self.drawingSettings.strokeWidth,
+            stroke: self.drawingSettings.strokeColor,
+          });
+          self.addLayer(path);
+          self.viewFigure();
+        }
+
+        this.canvas.on("path:created", onPathCreated);
+        this.drawingHandlers = { onPathCreated };
+      } else {
+        this.canvas.off("path:created", this.drawingHandlers.onPathCreated);
       }
 
-      this.canvas.on('path:created', onPathCreated);
-      this.drawingHandlers = { onPathCreated };
-    } else {
-      this.canvas.off('path:created', this.drawingHandlers.onPathCreated);
-    }
+      this.canvas.getObjects().forEach((obj) => {
+        obj.selectable = !this.isDrawingMode;
+      });
+    },
 
-    this.canvas.getObjects().forEach(obj => {
-      obj.selectable = !this.isDrawingMode;
-    });
-  },
-
-
-    // это был выбор слоя и присваивание ему layer.selected = true или false
-    // addListeners(layer) {
-    //   layer.object.onSelect = () => {
-    //     this.selectedLayer = layer;
-    //     layer.selected = true;
-    //   };
-    //   layer.object.onDeselect = () => {
-    //     layer.selected = false;
-    //     this.selectedLayer = null;
-    //   };
-    // },
     deselectAll() {
       this.canvas.discardActiveObject();
       this.selectedLayer = null;
+      this.canvas.remove(this.selectionRect);
+      this.selectionRect = null;
       this.layers.forEach((layer) => {
         layer.selected = false;
       });
@@ -1071,7 +1067,7 @@ export default {
           this.selectedLayer = layer;
           layer.selected = true;
         };
-        
+
         console.log(layer);
         console.log(layer.object);
 
@@ -1132,11 +1128,12 @@ export default {
       const dataURL = this.canvas.toDataURL();
       const link = document.createElement("a");
       link.href = dataURL;
-      link.download = "canvas_image.png";
+      link.download = `${this.projectName}.png`;
       link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      this.showContextMenu = false;
     },
     deleteEl() {
       const activeObject = this.canvas.getActiveObject();
@@ -1152,11 +1149,7 @@ export default {
 
     //
     //
-    //
-    //
     // ШРИФТЫ И ТЕКСТ
-    //
-    //
     //
     //
     applyFont() {
@@ -1241,9 +1234,8 @@ export default {
             filter = new fabric.Image.filters.Sepia();
             break;
           case "brightness":
-            filter = new fabric.Image.filters.Brightness({ brightness: 0.1 }); // Пример яркости
+            filter = new fabric.Image.filters.Brightness({ brightness: 0.1 }); 
             break;
-          // Добавьте другие фильтры по мере необходимости
         }
         activeObject.filters.push(filter);
         activeObject.applyFilters();
@@ -1257,130 +1249,6 @@ export default {
         activeObject.filters = [];
         activeObject.applyFilters();
         this.canvas.renderAll();
-      }
-    },
-
-    startCrop() {
-      if (
-        this.selectedLayer &&
-        this.selectedLayer.object &&
-        this.selectedLayer.object.type === "image"
-      ) {
-        this.isCropping = true;
-        const image = this.selectedLayer.object;
-
-        // Создаем прямоугольник для выделения области обрезки
-        const cropArea = new fabric.Rect({
-          left: image.left,
-          top: image.top,
-          width: image.width * image.scaleX,
-          height: image.height * image.scaleY,
-          fill: "rgba(255, 255, 255, 0.3)",
-          selectable: true, // область для обрезки должна быть интерактивной
-          hasBorders: true,
-          hasControls: true,
-          stroke: "#000",
-          strokeWidth: 1,
-        });
-
-        this.canvas.add(cropArea);
-        this.canvas.setActiveObject(cropArea);
-        this.canvas.renderAll();
-
-        // Блокируем все остальные объекты
-        this.canvas.forEachObject((obj) => {
-          if (obj !== cropArea) {
-            obj.selectable = false;
-          }
-        });
-
-        this.cropArea = cropArea; // Сохраняем область для обрезки
-      }
-    },
-    confirmCrop() {
-      if (this.cropArea && this.selectedLayer && this.selectedLayer.object) {
-        const activeObject = this.canvas.getActiveObject();
-        if (activeObject === this.cropArea) {
-          const image = this.selectedLayer.object;
-          if (!image || !image._element) {
-            console.error(
-              "Selected layer's object or its image element is null"
-            );
-            return;
-          }
-
-          const { left, top, width, height } = this.cropArea;
-          const scaleX = image.scaleX || 1;
-          const scaleY = image.scaleY || 1;
-
-          const tempCanvas = document.createElement("canvas");
-          const tempCtx = tempCanvas.getContext("2d");
-          tempCanvas.width = width;
-          tempCanvas.height = height;
-
-          const offsetX = (left - image.left) / scaleX;
-          const offsetY = (top - image.top) / scaleY;
-          const cropWidth = width / scaleX;
-          const cropHeight = height / scaleY;
-
-          tempCtx.drawImage(
-            image._element,
-            offsetX,
-            offsetY,
-            cropWidth,
-            cropHeight,
-            0,
-            0,
-            tempCanvas.width,
-            tempCanvas.height
-          );
-
-          const croppedImage = new fabric.Image(tempCanvas, {
-            left: this.cropArea.left,
-            top: this.cropArea.top,
-            scaleX: scaleX,
-            scaleY: scaleY,
-          });
-
-          this.canvas.remove(this.cropArea);
-          // this.canvas.remove(this.selectedLayer.object);
-
-          this.canvas.add(croppedImage);
-
-          this.canvas.forEachObject((obj) => {
-            obj.selectable = true;
-          });
-
-          this.canvas.setActiveObject(croppedImage);
-          this.canvas.renderAll();
-
-          this.cropArea = null;
-          this.isCropping = false;
-          // this.selectedLayer.object = croppedImage;
-        }
-      }
-    },
-
-    cancelCrop() {
-      if (this.cropArea) {
-        // Удаляем область для обрезки
-        this.canvas.remove(this.cropArea);
-
-        // Восстанавливаем интерактивность других объектов
-        this.canvas.forEachObject((obj) => {
-          obj.selectable = true;
-        });
-
-        this.cropArea = null; // Обнуляем область для обрезки
-        this.isCropping = false; // Завершаем режим обрезки
-
-        // Восстанавливаем выделение исходного объекта, если он существует
-        if (this.selectedLayer && this.selectedLayer.object) {
-          this.canvas.setActiveObject(this.selectedLayer.object);
-          this.canvas.renderAll();
-        } else {
-          console.error("Selected layer or object is null");
-        }
       }
     },
 
@@ -1421,16 +1289,14 @@ export default {
         const object = this.selectedLayer.object;
         this.selectedLayer.name = this.layerName;
 
-        // Если объект - изображение, устанавливаем фактические размеры
-        if (object.type === 'image') {
+        if (object.type === "image") {
           const scaleX = parseFloat(this.layerWidth) / object.width;
           const scaleY = parseFloat(this.layerHeight) / object.height;
           object.set({
             scaleX: scaleX,
-            scaleY: scaleY
+            scaleY: scaleY,
           });
         } else {
-          // Для остальных объектов используем set
           object.set({
             width: parseFloat(this.layerWidth),
             height: parseFloat(this.layerHeight),
@@ -1439,7 +1305,7 @@ export default {
           });
         }
 
-        if (object.type === 'textbox') {
+        if (object.type === "textbox") {
           object.set({
             fontFamily: this.selectedFont,
             fontSize: parseFloat(this.layerFontSize),
@@ -1448,89 +1314,61 @@ export default {
 
         this.canvas.renderAll();
       }
-      
-      // if (this.selectedLayer) {
-      //   const object = this.selectedLayer.object;
-      //   this.selectedLayer.name = this.layerName;
-
-      //   // Если объект - изображение, используем scaleToWidth и scaleToHeight
-      //   if (object.type === 'image') {
-      //     object.scaleToWidth(parseFloat(this.layerWidth));
-      //     object.scaleToHeight(parseFloat(this.layerHeight));
-      //   } else {
-      //     // Для остальных объектов используем set
-      //     object.set({
-      //       width: parseFloat(this.layerWidth),
-      //       height: parseFloat(this.layerHeight),
-      //       fill: this.layerColor,
-      //       opacity: parseFloat(this.layerOpacity),
-      //     });
-      //   }
-
-      //   if (object.type === 'textbox') {
-      //     object.set({
-      //       fontFamily: this.selectedFont,
-      //       fontSize: parseFloat(this.layerFontSize),
-      //     });
-      //   }
-
-      //   this.canvas.renderAll();
-      // }
     },
-      // Сохранение параметров как будто обрезка изображения
-      // if (this.selectedLayer) {
-      //   const object = this.selectedLayer.object;
-      //   this.selectedLayer.name = this.layerName;
-      //   object.set({
-      //     width: parseFloat(this.layerWidth),
-      //     height: parseFloat(this.layerHeight),
-      //     fill: this.layerColor,
-      //     opacity: parseFloat(this.layerOpacity),
-      //   });
-      //   if (object.type === "textbox") {
-      //     object.set({
-      //       fontFamily: this.selectedFont,
-      //       fontSize: parseFloat(this.layerFontSize),
-      //     });
-      //   }
-      //   this.canvas.renderAll();
-      // }
-    
 
     changeTextAlignment(alignment) {
       this.selectedTextAlign = alignment;
     },
 
+    handleOption(option) {
+      this.showContextMenu = false;
+      if (option === 'rename') {
+        this.showRenameDialog();
+      } else if (option === 'goBack') {
+        this.goBack();
+      } else if (option === 'saveProject') {
+        this.saveProject();
+      } else if (option === 'saveCanvasAsImage') {
+        this.saveCanvasAsImage();
+      }
+    },
+
+    // toggleContextMenu(event) {
+    //   this.showContextMenu = !this.showContextMenu;
+    //   const { top, left } = this.$refs.headNameProj.getBoundingClientRect();
+    //   if (this.showContextMenu) {
+    //     this.contextMenuPosition = {
+    //       top: event.clientY,
+    //       left: event.clientX,
+    //     };
+    //   }
+    // },
+
     toggleContextMenu(event) {
       this.showContextMenu = !this.showContextMenu;
+      const { top, left } = this.$refs.headNameProj.getBoundingClientRect();
       if (this.showContextMenu) {
         this.contextMenuPosition = {
-          top: event.clientY,
-          left: event.clientX,
+          top: `${event.clientY}px`,
+          left: `${event.clientX}px`,
         };
       }
     },
+
     handleClickOutside(event) {
       const contextMenu = this.$refs.contextMenu;
-      const headNameProj = this.$refs.headNameProj;
-
-      if (
-        contextMenu &&
-        !contextMenu.contains(event.target) &&
-        headNameProj &&
-        !headNameProj.contains(event.target)
-      ) {
+      if (contextMenu && !contextMenu.contains(event.target)) {
         this.showContextMenu = false;
       }
     },
 
     goBack() {
-      // код для возврата к предыдущему экрану
       this.$router.push({
         name: "home",
       });
       this.showContextMenu = false;
     },
+    
     generateId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
     },

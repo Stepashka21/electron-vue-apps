@@ -38,7 +38,7 @@
     </dialog>
 
     
-    <div v-if="contextMenuVisible" >
+    <div v-if="contextMenuVisible"  ref="contextMenu" >
       <ul class="context-menu" :style="contextMenuStyle">
         <li @click="openDialogRename()">Переименовать проект</li>
         <li @click="deleteProj()">Удалить проект</li>
@@ -105,6 +105,11 @@ export default {
   mounted() {
     this.ensureNeuroEditorFolderExists();
     this.loadProjects();
+    document.addEventListener('click', this.handleClickOutside);
+  },
+
+  beforeDestroy() {
+    document.removeEventListener('click', this.handleClickOutside);
   },
 
   methods: {
@@ -223,6 +228,13 @@ export default {
         this.contextMenuVisible = false;
       }
       this.selectedProject = null;
+    },
+
+    handleClickOutside(event) {
+      const contextMenu = this.$refs.contextMenu;
+      if (contextMenu && !contextMenu.contains(event.target)) {
+        this.closeContextMenu();
+      }
     },
 
     renameProject() {
