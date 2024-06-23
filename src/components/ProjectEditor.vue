@@ -9,20 +9,13 @@
         <ul
           v-if="showContextMenu"
           ref="contextMenu"
-          :style="{
-            top: `${contextMenuPosition.top}px`,
-            left: `${contextMenuPosition.left}px`,
-          }"
+          :style="contextMenuPosition"
           class="context-menu"
         >
           <li @click="handleOption('rename')">Переименовать проект</li>
           <li @click="handleOption('goBack')">Вернуться</li>
           <li @click="handleOption('saveProject')">Сохранить проект</li>
           <li @click="handleOption('saveCanvasAsImage')">Сохранить как картинку</li>
-          <!-- <li @click="showRenameDialog">Переименовать проект</li>
-          <li @click="goBack">Вернуться</li>
-          <li @click="saveProject">Сохранить проект</li>
-          <li @click="saveCanvasAsImage">Сохранить как картинку</li> -->
         </ul>
       </div>
       <!-- <router-link :to="{ name: 'ReplaceDialog' }">Перейти на страницу Replace</router-link> -->
@@ -1344,7 +1337,7 @@ export default {
     //   }
     // },
 
-    toggleContextMenu(event) {
+    openContextMenu(event) {
       this.showContextMenu = !this.showContextMenu;
       const { top, left } = this.$refs.headNameProj.getBoundingClientRect();
       if (this.showContextMenu) {
