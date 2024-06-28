@@ -476,18 +476,18 @@ export default {
 
   data() {
     return {
-      canvas: null,
-      showContextMenu: false,
-      contextMenuPosition: { top: 0, left: 0 },
-      projectName: "",
-      newProjectName: "",
-      projectFilePath: "",
-      projectData: null,
-      layers: [],
-      selectedLayer: null,
-      showFigureMenu: false,
-      jsonData: null,
-      selectedFolderPath: this.getDefaultFolderPath(),
+      canvas: null, //холст
+      showContextMenu: false, //менюшка по клику на название прокта 
+      contextMenuPosition: { top: 0, left: 0 }, //позиция менюшки
+      projectName: "", // принимаемое название проекта 
+      newProjectName: "", // изменяемое название проекта
+      projectFilePath: "", // путь для указания местонахождения проекта 
+      projectData: null, // данные файла (проекта)
+      layers: [], // Слои 
+      selectedLayer: null, // Выбранный слой 
+      showFigureMenu: false, // менюшка с svg-фигурками 
+      jsonData: null, // данные холста 
+      selectedFolderPath: this.getDefaultFolderPath(), 
       fonts: [
         "Times New Roman",
         "Pacifico",
@@ -575,15 +575,6 @@ export default {
       return neuroEditorPath;
     },
 
-    //
-    //
-    //
-    //
-    // ПЕРЕДАВАЕМАЯ ОБЛАСТЬ
-    //
-    //
-    //
-    //
     onMouseDown(options) {
       if (!this.isSelecting) return;
       const pointer = this.canvas.getPointer(options.e);
@@ -744,16 +735,6 @@ export default {
       }
     },
 
-    //
-    //
-    //
-    //
-    // ЗАГРУЗКА ПРОЕКТА
-    //
-    //
-    //
-    //
-
     loadProject() {
       if (!this.newProjectName) {
         this.projectName = this.$route.params.projectName;
@@ -802,15 +783,6 @@ export default {
       });
     },
 
-    //
-    //
-    //
-    //
-    // ПЕРЕИМЕНОВАНИЕ ПРОЕКТА
-    //
-    //
-    //
-    //
     showRenameDialog() {
       this.dialogVisible = true;
       this.newProjectName = this.projectName; // заполняем поле текущим именем проекта
@@ -857,14 +829,6 @@ export default {
     },
 
     //
-    //
-    //
-    //
-    // ДИАЛОГОВЫЕ ОКНА
-    //
-    //
-    //
-    //
     viewDocs() {
       this.dialogVisible = true;
       this.$refs.diaDocs.style.visibility = "visible";
@@ -886,11 +850,6 @@ export default {
       );
     },
 
-    //
-    //
-    // ДОБАВЛЕНИЕ НА КАНВАС ФИГУР // КАРТИНКИ // ТЕКСТА
-    //
-    //
     addRectangle() {
       const rect = new fabric.Rect({
         id: this.generateId(),
@@ -1082,11 +1041,7 @@ export default {
       }
     },
 
-    //
-    //
-    // СОХРАНЕНИЕ ПРОЕКТА
-    //
-    //
+
     saveProject() {
       if (this.newProjectName) {
         this.projectName = this.newProjectName;
@@ -1140,11 +1095,6 @@ export default {
       this.layers = [];
     },
 
-    //
-    //
-    // ШРИФТЫ И ТЕКСТ
-    //
-    //
     applyFont() {
       if (this.selectedFont !== "Times New Roman") {
         this.loadAndUse(this.selectedFont);
@@ -1209,11 +1159,6 @@ export default {
       }
     },
 
-    //
-    //
-    // Фильтры
-    //
-    //
     // Метод для применения фильтра к активному изображению
     applyFilter(type) {
       const activeObject = this.canvas.getActiveObject();
@@ -1325,18 +1270,6 @@ export default {
         this.saveCanvasAsImage();
       }
     },
-
-    // toggleContextMenu(event) {
-    //   this.showContextMenu = !this.showContextMenu;
-    //   const { top, left } = this.$refs.headNameProj.getBoundingClientRect();
-    //   if (this.showContextMenu) {
-    //     this.contextMenuPosition = {
-    //       top: event.clientY,
-    //       left: event.clientX,
-    //     };
-    //   }
-    // },
-
     openContextMenu(event) {
       this.showContextMenu = !this.showContextMenu;
       const { top, left } = this.$refs.headNameProj.getBoundingClientRect();
